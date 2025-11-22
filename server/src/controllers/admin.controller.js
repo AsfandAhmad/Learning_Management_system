@@ -74,10 +74,11 @@ export async function approveTeacher(req, res, next) {
       return res.status(400).json({ message: "Teacher is already approved" });
     }
 
-    // Update teacher status to Approved with admin ID and timestamp
+    // Update teacher status to Approved
+    // Note: ApprovedByAdminID and ApprovedAt columns don't exist in schema, so we only update Status
     await pool.query(
-      "UPDATE Teacher SET Status = 'Approved', ApprovedByAdminID = ?, ApprovedAt = NOW() WHERE TeacherID = ?",
-      [adminId, teacherId]
+      "UPDATE Teacher SET Status = 'Approved' WHERE TeacherID = ?",
+      [teacherId]
     );
 
     return res.status(200).json({
@@ -113,10 +114,11 @@ export async function rejectTeacher(req, res, next) {
       return res.status(404).json({ message: "Teacher not found" });
     }
 
-    // Update teacher status to Rejected with reason and admin ID
+    // Update teacher status to Rejected
+    // Note: RejectionReason, RejectedByAdminID, RejectedAt columns don't exist in schema
     await pool.query(
-      "UPDATE Teacher SET Status = 'Rejected', RejectionReason = ?, RejectedByAdminID = ?, RejectedAt = NOW() WHERE TeacherID = ?",
-      [reason || null, adminId, teacherId]
+      "UPDATE Teacher SET Status = 'Rejected' WHERE TeacherID = ?",
+      [teacherId]
     );
 
     return res.status(200).json({
@@ -139,8 +141,7 @@ export async function getTeacherDetails(req, res, next) {
     const { teacherId } = req.params;
 
     const [teacher] = await pool.query(
-      `SELECT t.TeacherID, t.FullName, t.Email, t.Qualification, t.Status, t.CreatedAt,
-              t.ApprovedAt, t.RejectionReason
+      `SELECT t.TeacherID, t.FullName, t.Email, t.Qualification, t.Status, t.CreatedAt, t.ProfilePhoto
        FROM Teacher t 
        WHERE t.TeacherID = ?`,
       [teacherId]
@@ -153,7 +154,10 @@ export async function getTeacherDetails(req, res, next) {
     const [documents] = await pool.query(
       "SELECT DocumentID, DocumentType, FileName, FileURL, UploadedAt FROM TeacherDocument WHERE TeacherID = ?",
       [teacherId]
-    );
+    ).catch(err => {
+      console.warn('Warning: Could not retrieve documents:', err.message);
+      return [[]]; // Return empty array if table doesn't exist
+    });
 
     // Normalize document URLs
     documents.forEach(d => {
@@ -203,6 +207,59 @@ export async function getTeacherDocuments(req, res, next) {
     return res.status(200).json({
       teacher: teacher[0],
       documents
+    });
+  } catch (e) {
+    next(e);
+  }
+}
+
+// GET teacher CV for admin review
+export async function getTeacherCV(req, res, next) {
+  try {
+    const { teacherId } = req.params;
+
+    // Get teacher info
+    const [teacher] = await pool.query(
+      "SELECT TeacherID, FullName, Email FROM Teacher WHERE TeacherID = ?",
+      [teacherId]
+    );
+
+    if (!teacher.length) {
+      return res.status(404).json({ message: "Teacher not found" });
+    }
+
+    // Try to get CV from TeacherDocument table
+    try {
+      const [cvDoc] = await pool.query(
+        `SELECT DocumentID, FileName, FileURL FROM TeacherDocument 
+         WHERE TeacherID = ? AND DocumentType = 'CV'`,
+        [teacherId]
+      );
+
+      if (cvDoc.length) {
+        let fileURL = cvDoc[0].FileURL || '';
+        if (fileURL && fileURL.startsWith('/uploads')) {
+          fileURL = `${req.protocol}://${req.get('host')}${fileURL}`;
+        }
+
+        return res.json({
+          teacher: teacher[0],
+          cv: {
+            documentId: cvDoc[0].DocumentID,
+            fileName: cvDoc[0].FileName,
+            fileURL: fileURL
+          }
+        });
+      }
+    } catch (dbErr) {
+      console.warn('Warning: Could not retrieve CV from database:', dbErr.message);
+    }
+
+    // If no CV found in database, return teacher info with null CV
+    res.status(404).json({
+      teacher: teacher[0],
+      cv: null,
+      message: "No CV uploaded for this teacher"
     });
   } catch (e) {
     next(e);

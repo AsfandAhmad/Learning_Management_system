@@ -1,13 +1,8 @@
 import app from "./app.js";
 import { pool } from "./config/db.js";
-import studentRoutes from "./routes/student.routes.js";
-import courseRoutes from "./routes/course.routes.js";
-import quizRoutes from "./routes/quiz.routes.js";
 
-// Attach additional routes not currently in `app.js`
-app.use("/student", studentRoutes);
-app.use("/course", courseRoutes);
-app.use("/quiz", quizRoutes);
+// All routes are already mounted in app.js with /api prefix
+// Removed duplicate routes that were creating non-API-prefixed paths
 
 const PORT = process.env.PORT || 5000;
 

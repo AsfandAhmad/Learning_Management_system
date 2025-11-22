@@ -52,6 +52,7 @@ app.use("/api/student", studentRoutes);
 app.use("/api/courses", coursesRoutes);
 app.use("/api/courses/:courseId/sections", sectionsRoutes);
 app.use("/api/sections/:sectionId/lessons", lessonsRoutes);
+app.use("/api/courses/:courseId/lectures", lessonsRoutes);
 app.use("/api/courses/:courseId/assignments", assignmentsRoutes);
 app.use("/api/courses/:courseId/quizzes", quizRoutes);
 

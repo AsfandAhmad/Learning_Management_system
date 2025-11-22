@@ -5,7 +5,8 @@ import {
   rejectTeacher,
   getAllTeachers,
   getTeacherDocuments,
-  getTeacherDetails
+  getTeacherDetails,
+  getTeacherCV
 } from "../controllers/admin.controller.js";
 import { isAuth, isAdmin } from "../middleware/auth.js";
 
@@ -18,6 +19,7 @@ router.use(isAuth, isAdmin);
 router.get("/teachers", getAllTeachers);
 router.get("/teachers/pending", getPendingTeachers);
 router.get("/teachers/:teacherId/details", getTeacherDetails);
+router.get("/teachers/:teacherId/cv", getTeacherCV);
 router.patch("/teachers/:teacherId/approve", approveTeacher);
 router.patch("/teachers/:teacherId/reject", rejectTeacher);
 

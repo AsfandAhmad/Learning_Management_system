@@ -1,0 +1,34 @@
+{
+  "name": "lms-full-stack",
+  "version": "1.0.0",
+  "description": "Full-stack Learning Management System with React frontend and Node backend",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently \"npm run server:dev\" \"npm run client:dev\" --names \"[SERVER]\" \"[CLIENT]\" --prefix \"[{name}]\" --kill-others-on-exit",
+    "start": "npm run dev",
+    "server:dev": "cd server && npm run dev",
+    "server:start": "cd server && npm start",
+    "server:db:init": "cd server && npm run db:init",
+    "server:test": "cd server && npm run test-cloud",
+    "client:dev": "cd client && npm run dev",
+    "client:build": "cd client && npm run build",
+    "client:preview": "cd client && npm run preview",
+    "client:lint": "cd client && npm run lint",
+    "build": "npm run client:build",
+    "test": "bash test_all_routes.sh",
+    "setup": "npm install && cd server && npm install && cd ../client && npm install",
+    "install:all": "npm install && cd server && npm install && cd ../client && npm install"
+  },
+  "keywords": [
+    "learning",
+    "management",
+    "system",
+    "lms",
+    "education"
+  ],
+  "author": "Asfand Ahmad",
+  "license": "ISC",
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}

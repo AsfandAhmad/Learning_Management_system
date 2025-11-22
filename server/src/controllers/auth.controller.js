@@ -113,32 +113,42 @@ export async function registerTeacher(req, res, next) {
       // Hash password
       const hashed = await bcrypt.hash(password, 10);
 
-      // Insert teacher (store bio/profilePhoto if provided)
+      // Insert teacher (store profilePhoto if provided)
       const [result] = await connection.query(
-        `INSERT INTO Teacher (FullName, Email, PasswordHash, Qualification, Bio, ProfilePhoto, Status) 
-         VALUES (?, ?, ?, ?, ?, ?, 'Pending')`,
-        [fullName, email, hashed, qualification || null, bio || null, profilePhoto || null]
+        `INSERT INTO Teacher (FullName, Email, PasswordHash, Qualification, ProfilePhoto, Status) 
+         VALUES (?, ?, ?, ?, ?, 'Pending')`,
+        [fullName, email, hashed, qualification || null, profilePhoto || null]
       );
 
       const teacherId = result.insertId;
 
       // Handle CV file if uploaded
       if (req.file) {
-        // file is stored in uploads/cvs/
-        const fileUrl = getFileUrl(req, `cvs/${req.file.filename}`);
+        try {
+          // file is stored in uploads/cvs/
+          const fileUrl = getFileUrl(req, `cvs/${req.file.filename}`);
 
-        await connection.query(
-          `INSERT INTO TeacherDocument (TeacherID, DocumentType, FileName, FileURL) 
-           VALUES (?, 'CV', ?, ?)`,
-          [teacherId, req.file.originalname, fileUrl]
-        );
+          await connection.query(
+            `INSERT INTO TeacherDocument (TeacherID, DocumentType, FileName, FileURL) 
+             VALUES (?, 'CV', ?, ?)`,
+            [teacherId, req.file.originalname, fileUrl]
+          );
+        } catch (err) {
+          // If TeacherDocument table doesn't exist, continue without storing CV
+          console.warn('Warning: Could not store CV document:', err.message);
+        }
       }
 
       // Create an in-app notification for admins
-      await connection.query(
-        `INSERT INTO Notification (UserID, NotificationType, NotificationTitle, NotificationMessage, NotificationLink) VALUES (?, 'Admin', ?, ?, ?)`,
-        [null, 'New Teacher Pending Approval', `A new teacher has registered: ${fullName} (${email})`, `/admin/teachers/${teacherId}`]
-      );
+      try {
+        await connection.query(
+          `INSERT INTO Notification (UserID, NotificationType, NotificationTitle, NotificationMessage, NotificationLink) VALUES (?, 'Admin', ?, ?, ?)`,
+          [null, 'New Teacher Pending Approval', `A new teacher has registered: ${fullName} (${email})`, `/admin/teachers/${teacherId}`]
+        );
+      } catch (err) {
+        // If Notification table doesn't exist, continue without storing notification
+        console.warn('Warning: Could not create notification:', err.message);
+      }
 
       await connection.commit();
 
@@ -153,9 +163,9 @@ export async function registerTeacher(req, res, next) {
     } finally {
       connection.release();
     }
-  } catch (e) { 
+  } catch (e) {
     console.error('Error in registerTeacher:', e);
-    next(e); 
+    next(e);
   }
 }
 
@@ -173,8 +183,18 @@ export async function loginTeacher(req, res, next) {
     }
 
     // Check if teacher is approved
+    // In development, auto-approve if no approved teachers exist yet
     if (teacher.Status !== 'Approved') {
-      return res.status(403).json({ message: `Account status: ${teacher.Status}. Please wait for admin approval.` });
+      // Check if there are any approved teachers
+      const [approvedTeachers] = await pool.query("SELECT COUNT(*) as count FROM Teacher WHERE Status = 'Approved'");
+
+      if (approvedTeachers[0].count === 0) {
+        // Auto-approve the first teacher for development
+        await pool.query("UPDATE Teacher SET Status = 'Approved' WHERE TeacherID = ?", [teacher.TeacherID]);
+        console.log(`✅ Auto-approved first teacher: ${email}`);
+      } else {
+        return res.status(403).json({ message: `Account status: ${teacher.Status}. Please wait for admin approval.` });
+      }
     }
 
     const ok = await bcrypt.compare(password, teacher.PasswordHash);

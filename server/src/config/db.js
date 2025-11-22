@@ -28,10 +28,11 @@ import dotenv from "dotenv";
 dotenv.config();
 
 const port = process.env.DB_PORT ? Number(process.env.DB_PORT) : 20749;
-const useSsl = String(process.env.DB_SSL).toLowerCase() === "true" || process.env.DB_SSL === "1";
-const sslRejectUnauthorized = String(process.env.DB_SSL_REJECT_UNAUTHORIZED).toLowerCase() !== "false";
+// Force SSL for Aiven cloud database (required)
+const useSsl = true;
+const sslRejectUnauthorized = false;
 
-const sslOptions = useSsl ? { ssl: { rejectUnauthorized: sslRejectUnauthorized } } : {};
+const sslOptions = { ssl: { rejectUnauthorized: sslRejectUnauthorized } };
 
 // Log DB config at startup (non-sensitive info only)
 console.log(`📦 Database Configuration:`);

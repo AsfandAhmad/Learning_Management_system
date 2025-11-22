@@ -13,7 +13,7 @@ export async function listCourses(req, res, next) {
        ORDER BY c.CreatedAt DESC`
     );
     res.json(courses);
-  } catch (e) { 
+  } catch (e) {
     next(e);
   }
 }
@@ -32,28 +32,28 @@ export async function getCourseById(req, res, next) {
         t.Email AS TeacherEmail, 
         t.Qualification,
         (SELECT COUNT(*) FROM Enrollment WHERE CourseID = c.CourseID) AS StudentCount`;
-    
+
     const params = [];
-    
+
     if (userId) {
       query += `, EXISTS(SELECT 1 FROM Enrollment e WHERE e.StudentID = ? AND e.CourseID = c.CourseID) AS IsEnrolled`;
       params.push(userId);
     } else {
       query += `, 0 AS IsEnrolled`;
     }
-    
+
     if (isTeacher) {
       query += `, c.TeacherID = ? AS IsInstructor`;
       params.push(userId);
     } else {
       query += `, 0 AS IsInstructor`;
     }
-    
+
     query += ` FROM Course c JOIN Teacher t ON c.TeacherID = t.TeacherID WHERE c.CourseID = ?`;
     params.push(courseId);
-    
+
     const [course] = await pool.query(query, params);
-    
+
     if (!course.length) return res.status(404).json({ message: "Course not found" });
 
     // Get sections with lesson count
@@ -70,65 +70,65 @@ export async function getCourseById(req, res, next) {
       [userId || 0, isTeacher ? 1 : 0, courseId]
     );
 
-      // Get prerequisites (table may not exist on older DBs)
-      let prerequisites = [];
-      try {
-        const [rows] = await pool.query(
-          `SELECT c.CourseID, c.Title, c.ThumbnailURL 
+    // Get prerequisites (table may not exist on older DBs)
+    let prerequisites = [];
+    try {
+      const [rows] = await pool.query(
+        `SELECT c.CourseID, c.Title, c.ThumbnailURL 
            FROM CoursePrerequisite cp
            JOIN Course c ON cp.PrerequisiteCourseID = c.CourseID
            WHERE cp.CourseID = ?`,
-          [courseId]
-        );
-        prerequisites = rows;
-      } catch (err) {
-        // If migration not applied, ignore and continue with empty prerequisites
-        if (err && (err.code === 'ER_NO_SUCH_TABLE' || err.code === 'ER_BAD_TABLE_ERROR')) {
-          prerequisites = [];
-        } else {
-          throw err;
-        }
+        [courseId]
+      );
+      prerequisites = rows;
+    } catch (err) {
+      // If migration not applied, ignore and continue with empty prerequisites
+      if (err && (err.code === 'ER_NO_SUCH_TABLE' || err.code === 'ER_BAD_TABLE_ERROR')) {
+        prerequisites = [];
+      } else {
+        throw err;
       }
+    }
 
     // Get learning outcomes
-      // Get learning outcomes (may not exist)
-      let learningOutcomes = [];
-      try {
-        const [rows] = await pool.query(
-          `SELECT OutcomeID, Description 
+    // Get learning outcomes (may not exist)
+    let learningOutcomes = [];
+    try {
+      const [rows] = await pool.query(
+        `SELECT OutcomeID, Description 
            FROM CourseLearningOutcome 
            WHERE CourseID = ? 
            ORDER BY SortOrder, OutcomeID`,
-          [courseId]
-        );
-        learningOutcomes = rows;
-      } catch (err) {
-        if (err && (err.code === 'ER_NO_SUCH_TABLE' || err.code === 'ER_BAD_TABLE_ERROR')) {
-          learningOutcomes = [];
-        } else {
-          throw err;
-        }
+        [courseId]
+      );
+      learningOutcomes = rows;
+    } catch (err) {
+      if (err && (err.code === 'ER_NO_SUCH_TABLE' || err.code === 'ER_BAD_TABLE_ERROR')) {
+        learningOutcomes = [];
+      } else {
+        throw err;
       }
+    }
 
     // Get course resources
-      // Get course resources (may not exist)
-      let resources = [];
-      try {
-        const [rows] = await pool.query(
-          `SELECT ResourceID, Title, Description, FileURL, FileType, SortOrder
+    // Get course resources (may not exist)
+    let resources = [];
+    try {
+      const [rows] = await pool.query(
+        `SELECT ResourceID, Title, Description, FileURL, FileType, SortOrder
            FROM CourseResource 
            WHERE CourseID = ? 
            ORDER BY SortOrder, Title`,
-          [courseId]
-        );
-        resources = rows;
-      } catch (err) {
-        if (err && (err.code === 'ER_NO_SUCH_TABLE' || err.code === 'ER_BAD_TABLE_ERROR')) {
-          resources = [];
-        } else {
-          throw err;
-        }
+        [courseId]
+      );
+      resources = rows;
+    } catch (err) {
+      if (err && (err.code === 'ER_NO_SUCH_TABLE' || err.code === 'ER_BAD_TABLE_ERROR')) {
+        resources = [];
+      } else {
+        throw err;
       }
+    }
 
     // Parse JSON fields if they exist
     const courseData = {
@@ -147,7 +147,7 @@ export async function getCourseById(req, res, next) {
     delete courseData.LearningOutcomes;
 
     res.json(courseData);
-  } catch (e) { 
+  } catch (e) {
     next(e);
   }
 }
@@ -157,32 +157,41 @@ const processCourseData = (data) => {
   // Support both lowercase and Title case field names
   const processed = {};
   const fields = [
-    'title', 'description', 'category', 'level', 'thumbnailURL', 
+    'title', 'description', 'category', 'level', 'thumbnailURL', 'status',
     'prerequisites', 'learningOutcomes', 'estimatedHours', 'difficultyLevel'
   ];
-  
+
   fields.forEach(field => {
     const titleCase = field.charAt(0).toUpperCase() + field.slice(1);
     processed[field] = data[field] !== undefined ? data[field] : data[titleCase];
   });
-  
+
   return processed;
 };
 
 // Helper function to save course prerequisites
 const savePrerequisites = async (courseId, prerequisites) => {
   if (!prerequisites || !Array.isArray(prerequisites)) return;
-  
-  // Delete existing prerequisites
-  await pool.query('DELETE FROM CoursePrerequisite WHERE CourseID = ?', [courseId]);
-  
-  // Insert new prerequisites
-  for (const prereqId of prerequisites) {
-    if (prereqId !== courseId) { // Prevent self-referential
-      await pool.query(
-        'INSERT INTO CoursePrerequisite (CourseID, PrerequisiteCourseID) VALUES (?, ?)',
-        [courseId, prereqId]
-      );
+
+  try {
+    // Delete existing prerequisites
+    await pool.query('DELETE FROM CoursePrerequisite WHERE CourseID = ?', [courseId]);
+
+    // Insert new prerequisites
+    for (const prereqId of prerequisites) {
+      if (prereqId !== courseId) { // Prevent self-referential
+        await pool.query(
+          'INSERT INTO CoursePrerequisite (CourseID, PrerequisiteCourseID) VALUES (?, ?)',
+          [courseId, prereqId]
+        );
+      }
+    }
+  } catch (err) {
+    // If CoursePrerequisite table doesn't exist, skip silently (development mode)
+    if (err.code === 'ER_NO_SUCH_TABLE') {
+      console.warn('Warning: CoursePrerequisite table does not exist. Skipping prerequisites.');
+    } else {
+      throw err;
     }
   }
 };
@@ -190,19 +199,28 @@ const savePrerequisites = async (courseId, prerequisites) => {
 // Helper function to save learning outcomes
 const saveLearningOutcomes = async (courseId, outcomes) => {
   if (!outcomes || !Array.isArray(outcomes)) return;
-  
-  // Delete existing outcomes
-  await pool.query('DELETE FROM CourseLearningOutcome WHERE CourseID = ?', [courseId]);
-  
-  // Insert new outcomes
-  for (const [index, outcome] of outcomes.entries()) {
-    if (outcome && outcome.trim()) {
-      await pool.query(
-        `INSERT INTO CourseLearningOutcome 
-         (CourseID, Description, SortOrder) 
-         VALUES (?, ?, ?)`,
-        [courseId, outcome.trim(), index + 1]
-      );
+
+  try {
+    // Delete existing outcomes
+    await pool.query('DELETE FROM CourseLearningOutcome WHERE CourseID = ?', [courseId]);
+
+    // Insert new outcomes
+    for (const [index, outcome] of outcomes.entries()) {
+      if (outcome && outcome.trim()) {
+        await pool.query(
+          `INSERT INTO CourseLearningOutcome 
+           (CourseID, Description, SortOrder) 
+           VALUES (?, ?, ?)`,
+          [courseId, outcome.trim(), index + 1]
+        );
+      }
+    }
+  } catch (err) {
+    // If CourseLearningOutcome table doesn't exist, skip silently (development mode)
+    if (err.code === 'ER_NO_SUCH_TABLE') {
+      console.warn('Warning: CourseLearningOutcome table does not exist. Skipping learning outcomes.');
+    } else {
+      throw err;
     }
   }
 };
@@ -211,7 +229,7 @@ const saveLearningOutcomes = async (courseId, outcomes) => {
 export async function createCourse(req, res, next) {
   const connection = await pool.getConnection();
   await connection.beginTransaction();
-  
+
   try {
     const teacherId = req.user.teacherId;
     const {
@@ -229,20 +247,15 @@ export async function createCourse(req, res, next) {
     // Insert the course
     const [result] = await connection.query(
       `INSERT INTO Course 
-       (TeacherID, Title, Description, Category, Level, ThumbnailURL, 
-        Prerequisites, LearningOutcomes, EstimatedHours, DifficultyLevel, Status) 
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Draft')`,
+       (TeacherID, Title, Description, Category, Level, ThumbnailURL, Status) 
+       VALUES (?, ?, ?, ?, ?, ?, 'Draft')`,
       [
         teacherId,
         title,
         description,
         category,
         level,
-        thumbnailURL,
-        JSON.stringify(prerequisites),
-        JSON.stringify(learningOutcomes),
-        estimatedHours || null,
-        difficultyLevel || 'Beginner'
+        thumbnailURL
       ]
     );
 
@@ -253,7 +266,7 @@ export async function createCourse(req, res, next) {
     await saveLearningOutcomes(courseId, learningOutcomes);
 
     await connection.commit();
-    
+
     res.status(201).json({
       CourseID: courseId,
       message: "Course created successfully in Draft status"
@@ -270,7 +283,7 @@ export async function createCourse(req, res, next) {
 export async function updateCourse(req, res, next) {
   const connection = await pool.getConnection();
   await connection.beginTransaction();
-  
+
   try {
     const { courseId } = req.params;
     const teacherId = req.user.teacherId;
@@ -292,7 +305,7 @@ export async function updateCourse(req, res, next) {
       "SELECT TeacherID FROM Course WHERE CourseID = ?",
       [courseId]
     );
-    
+
     if (!course.length || course[0].TeacherID !== teacherId) {
       await connection.rollback();
       return res.status(403).json({ message: "Unauthorized" });
@@ -306,11 +319,7 @@ export async function updateCourse(req, res, next) {
         Category = COALESCE(?, Category),
         Level = COALESCE(?, Level),
         ThumbnailURL = COALESCE(?, ThumbnailURL),
-        Status = COALESCE(?, Status),
-        Prerequisites = COALESCE(?, Prerequisites),
-        LearningOutcomes = COALESCE(?, LearningOutcomes),
-        EstimatedHours = COALESCE(?, EstimatedHours),
-        DifficultyLevel = COALESCE(?, DifficultyLevel)
+        Status = COALESCE(?, Status)
       WHERE CourseID = ?`,
       [
         title,
@@ -319,10 +328,6 @@ export async function updateCourse(req, res, next) {
         level,
         thumbnailURL,
         status,
-        JSON.stringify(prerequisites),
-        JSON.stringify(learningOutcomes),
-        estimatedHours,
-        difficultyLevel,
         courseId
       ]
     );
@@ -333,9 +338,9 @@ export async function updateCourse(req, res, next) {
 
     await connection.commit();
     res.json({ ok: true, message: "Course updated successfully" });
-  } catch (e) { 
+  } catch (e) {
     await connection.rollback();
-    next(e); 
+    next(e);
   } finally {
     connection.release();
   }
@@ -358,7 +363,7 @@ export async function deleteCourse(req, res, next) {
 
     await pool.query("DELETE FROM Course WHERE CourseID = ?", [courseId]);
     res.json({ ok: true, message: "Course deleted successfully" });
-  } catch (e) { 
+  } catch (e) {
     next(e);
   }
 }
@@ -378,7 +383,7 @@ export async function getTeacherCourses(req, res, next) {
       [teacherId]
     );
     res.json(courses);
-  } catch (e) { 
+  } catch (e) {
     next(e);
   }
 }
@@ -423,7 +428,7 @@ export async function enrollCourse(req, res, next) {
       message: "Enrolled in course successfully",
       CourseID: courseId
     });
-  } catch (e) { 
+  } catch (e) {
     next(e);
   }
 }
@@ -446,7 +451,7 @@ export async function getStudentCourses(req, res, next) {
       [studentId]
     );
     res.json(courses);
-  } catch (e) { 
+  } catch (e) {
     next(e);
   }
 }
@@ -476,7 +481,7 @@ export async function getCourseEnrollments(req, res, next) {
       [courseId]
     );
     res.json(enrollments);
-  } catch (e) { 
+  } catch (e) {
     next(e);
   }
 }
@@ -513,7 +518,7 @@ export async function unenrollCourse(req, res, next) {
 
     await pool.query("DELETE FROM Enrollment WHERE EnrollmentID = ?", [enrollmentId]);
     res.json({ ok: true, message: "Unenrolled successfully" });
-  } catch (e) { 
+  } catch (e) {
     next(e);
   }
 }

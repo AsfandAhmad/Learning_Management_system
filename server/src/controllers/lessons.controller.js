@@ -10,9 +10,9 @@ export async function getLessons(req, res, next) {
         const [section] = await pool.query("SELECT SectionID FROM Section WHERE SectionID = ?", [sectionId]);
         if (!section.length) return res.status(404).json({ message: "Section not found" });
 
-        let query = "SELECT LessonID, Title, ContentType, VideoURL, VideoDuration, PositionOrder FROM Lesson WHERE SectionID = ? ORDER BY PositionOrder";
+        let query = "SELECT LessonID, Title, ContentType, ContentURL, PositionOrder FROM Lesson WHERE SectionID = ? ORDER BY PositionOrder";
         const params = [sectionId];
-        
+
         const [lessons] = await pool.query(query, params);
 
         // Get progress for each lesson if student is logged in
@@ -37,8 +37,7 @@ export async function getLessonById(req, res, next) {
         const studentId = req.user?.studentId;
 
         const [lesson] = await pool.query(
-            `SELECT LessonID, Title, ContentType, ContentURL, VideoURL, VideoDuration, 
-                    Notes, LessonType, CreatedAt FROM Lesson WHERE LessonID = ?`,
+            `SELECT LessonID, Title, ContentType, ContentURL, CreatedAt FROM Lesson WHERE LessonID = ?`,
             [lessonId]
         );
         if (!lesson.length) return res.status(404).json({ message: "Lesson not found" });
@@ -99,11 +98,13 @@ export async function createLesson(req, res, next) {
             positionOrder = (posRes[0].MaxPos || 0) + 1;
         }
 
+        // Use ContentURL for the URL (combined video and content storage)
+        const lessonURL = contentURL || videoURL;
+
         const [result] = await pool.query(
-            `INSERT INTO Lesson (SectionID, Title, ContentType, ContentURL, VideoURL, VideoDuration, 
-                                Notes, LessonType, PositionOrder) 
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-            [sectionId, title, contentType, contentURL, videoURL, videoDuration || null, notes, lessonType || 'Mixed', positionOrder]
+            `INSERT INTO Lesson (SectionID, Title, ContentType, ContentURL, PositionOrder) 
+             VALUES (?, ?, ?, ?, ?)`,
+            [sectionId, title, contentType, lessonURL, positionOrder]
         );
         res.status(201).json({ LessonID: result.insertId, message: "Lesson created successfully" });
     } catch (e) { next(e); }
@@ -133,11 +134,13 @@ export async function updateLesson(req, res, next) {
             return res.status(403).json({ message: "Unauthorized" });
         }
 
+        // Use ContentURL for both video and content storage
+        const lessonURL = contentURL || videoURL;
+
         await pool.query(
             `UPDATE Lesson SET Title = COALESCE(?, Title), ContentType = COALESCE(?, ContentType), ContentURL = COALESCE(?, ContentURL), 
-                             VideoURL = COALESCE(?, VideoURL), VideoDuration = COALESCE(?, VideoDuration), Notes = COALESCE(?, Notes), 
-                             LessonType = COALESCE(?, LessonType), PositionOrder = COALESCE(?, PositionOrder) WHERE LessonID = ?`,
-            [title, contentType, contentURL, videoURL, videoDuration, notes, lessonType, positionOrder, lessonId]
+                             PositionOrder = COALESCE(?, PositionOrder) WHERE LessonID = ?`,
+            [title, contentType, lessonURL, positionOrder, lessonId]
         );
         res.json({ ok: true, message: "Lesson updated successfully" });
     } catch (e) { next(e); }
@@ -292,5 +295,238 @@ export async function getLessonViews(req, res, next) {
             [lessonId]
         );
         res.json(views[0] || { ViewCount: 0 });
+    } catch (e) { next(e); }
+}
+
+// ==================== VIDEO LECTURE MANAGEMENT ====================
+
+// POST upload lecture video
+export async function uploadLessonVideo(req, res, next) {
+    try {
+        const { courseId, lectureId } = req.params;
+        const teacherId = req.user.teacherId;
+
+        if (!req.file) {
+            return res.status(400).json({ message: "No video file uploaded" });
+        }
+
+        // Verify lesson belongs to teacher's course
+        const [lesson] = await pool.query(
+            `SELECT l.LessonID, s.CourseID, c.TeacherID 
+             FROM Lesson l 
+             JOIN Section s ON l.SectionID = s.SectionID 
+             JOIN Course c ON s.CourseID = c.CourseID 
+             WHERE l.LessonID = ? AND c.CourseID = ?`,
+            [lectureId, courseId]
+        );
+
+        if (!lesson.length || lesson[0].TeacherID !== teacherId) {
+            return res.status(403).json({ message: "Unauthorized" });
+        }
+
+        // Calculate video duration (basic - you might want to use ffmpeg in production)
+        const fileUrl = `/uploads/videos/${courseId}/${lectureId}/${req.file.filename}`;
+
+        // Store video metadata in database if you have a LessonVideo table
+        // For now, just return the file URL
+        res.status(201).json({
+            message: "Video uploaded successfully",
+            videoId: `${courseId}_${lectureId}_${req.file.filename}`,
+            fileName: req.file.originalname,
+            fileURL: fileUrl,
+            fileSize: req.file.size,
+            uploadedAt: new Date().toISOString()
+        });
+    } catch (e) { next(e); }
+}
+
+// GET all videos for a lesson
+export async function getLessonVideos(req, res, next) {
+    try {
+        const { courseId, lectureId } = req.params;
+
+        // Read videos from filesystem (since we don't have a LessonVideo table)
+        const fs = await import('fs').then(m => m.default);
+        const path = await import('path').then(m => m.default);
+        const videoDirPath = path.join(process.cwd(), `uploads/videos/${courseId}/${lectureId}`);
+
+        if (!fs.existsSync(videoDirPath)) {
+            return res.json([]);
+        }
+
+        const files = fs.readdirSync(videoDirPath);
+        const videos = files.map(file => ({
+            videoId: file,
+            fileName: file,
+            fileURL: `/uploads/videos/${courseId}/${lectureId}/${file}`,
+            uploadedAt: fs.statSync(path.join(videoDirPath, file)).birthtime
+        }));
+
+        res.json(videos);
+    } catch (e) { next(e); }
+}
+
+// DELETE a video
+export async function deleteVideo(req, res, next) {
+    try {
+        const { courseId, lectureId, videoId } = req.params;
+        const teacherId = req.user.teacherId;
+
+        // Verify teacher owns this course
+        const [lesson] = await pool.query(
+            `SELECT l.LessonID, c.TeacherID 
+             FROM Lesson l 
+             JOIN Section s ON l.SectionID = s.SectionID 
+             JOIN Course c ON s.CourseID = c.CourseID 
+             WHERE l.LessonID = ? AND c.CourseID = ?`,
+            [lectureId, courseId]
+        );
+
+        if (!lesson.length || lesson[0].TeacherID !== teacherId) {
+            return res.status(403).json({ message: "Unauthorized" });
+        }
+
+        const fs = await import('fs').then(m => m.default);
+        const path = await import('path').then(m => m.default);
+        const filePath = path.join(process.cwd(), `uploads/videos/${courseId}/${lectureId}/${videoId}`);
+
+        if (fs.existsSync(filePath)) {
+            fs.unlinkSync(filePath);
+        }
+
+        res.json({ ok: true, message: "Video deleted successfully" });
+    } catch (e) { next(e); }
+}
+
+// ==================== LESSON DOCUMENTS MANAGEMENT ====================
+
+// POST upload lesson document (teacher notes, resources)
+export async function uploadLessonDocument(req, res, next) {
+    try {
+        const { courseId, lectureId } = req.params;
+        const teacherId = req.user.teacherId;
+
+        if (!req.file) {
+            return res.status(400).json({ message: "No document file uploaded" });
+        }
+
+        // Verify lesson belongs to teacher's course
+        const [lesson] = await pool.query(
+            `SELECT l.LessonID, c.TeacherID 
+             FROM Lesson l 
+             JOIN Section s ON l.SectionID = s.SectionID 
+             JOIN Course c ON s.CourseID = c.CourseID 
+             WHERE l.LessonID = ? AND c.CourseID = ?`,
+            [lectureId, courseId]
+        );
+
+        if (!lesson.length || lesson[0].TeacherID !== teacherId) {
+            return res.status(403).json({ message: "Unauthorized" });
+        }
+
+        const fileUrl = `/uploads/documents/${courseId}/${req.file.filename}`;
+
+        res.status(201).json({
+            message: "Document uploaded successfully",
+            docId: `${courseId}_${req.file.filename}`,
+            fileName: req.file.originalname,
+            fileURL: fileUrl,
+            fileSize: req.file.size,
+            uploadedAt: new Date().toISOString()
+        });
+    } catch (e) { next(e); }
+}
+
+// GET all documents for a lesson/course
+export async function getLessonDocuments(req, res, next) {
+    try {
+        const { courseId, lectureId } = req.params;
+
+        const fs = await import('fs').then(m => m.default);
+        const path = await import('path').then(m => m.default);
+        const docDirPath = path.join(process.cwd(), `uploads/documents/${courseId}`);
+
+        if (!fs.existsSync(docDirPath)) {
+            return res.json([]);
+        }
+
+        const files = fs.readdirSync(docDirPath);
+        const documents = files.map(file => ({
+            docId: file,
+            fileName: file,
+            fileURL: `/uploads/documents/${courseId}/${file}`,
+            uploadedAt: fs.statSync(path.join(docDirPath, file)).birthtime
+        }));
+
+        res.json(documents);
+    } catch (e) { next(e); }
+}
+
+// DELETE a document
+export async function deleteDocument(req, res, next) {
+    try {
+        const { courseId, lectureId, docId } = req.params;
+        const teacherId = req.user.teacherId;
+
+        // Verify teacher owns this course
+        const [lesson] = await pool.query(
+            `SELECT l.LessonID, c.TeacherID 
+             FROM Lesson l 
+             JOIN Section s ON l.SectionID = s.SectionID 
+             JOIN Course c ON s.CourseID = c.CourseID 
+             WHERE l.LessonID = ? AND c.CourseID = ?`,
+            [lectureId, courseId]
+        );
+
+        if (!lesson.length || lesson[0].TeacherID !== teacherId) {
+            return res.status(403).json({ message: "Unauthorized" });
+        }
+
+        const fs = await import('fs').then(m => m.default);
+        const path = await import('path').then(m => m.default);
+        const filePath = path.join(process.cwd(), `uploads/documents/${courseId}/${docId}`);
+
+        if (fs.existsSync(filePath)) {
+            fs.unlinkSync(filePath);
+        }
+
+        res.json({ ok: true, message: "Document deleted successfully" });
+    } catch (e) { next(e); }
+}
+
+// ==================== STUDENT NOTES SUBMISSION ====================
+
+// POST upload student notes/documents
+export async function uploadStudentNotes(req, res, next) {
+    try {
+        const { courseId, lectureId } = req.params;
+        const studentId = req.user.studentId;
+
+        if (!req.file) {
+            return res.status(400).json({ message: "No file uploaded" });
+        }
+
+        // Verify student is enrolled in course
+        const [enrolled] = await pool.query(
+            `SELECT e.EnrollmentID FROM Enrollment e 
+             JOIN Course c ON e.CourseID = c.CourseID 
+             WHERE e.StudentID = ? AND c.CourseID = ?`,
+            [studentId, courseId]
+        );
+
+        if (!enrolled.length) {
+            return res.status(403).json({ message: "Not enrolled in this course" });
+        }
+
+        const fileUrl = `/uploads/documents/${courseId}/lecture_${lectureId}_submissions/${req.file.filename}`;
+
+        res.status(201).json({
+            message: "Notes submitted successfully",
+            noteId: `${studentId}_${lectureId}_${req.file.filename}`,
+            fileName: req.file.originalname,
+            fileURL: fileUrl,
+            fileSize: req.file.size,
+            submittedAt: new Date().toISOString()
+        });
     } catch (e) { next(e); }
 }

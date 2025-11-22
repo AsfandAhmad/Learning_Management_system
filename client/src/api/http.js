@@ -1,7 +1,12 @@
 import axios from 'axios';
 
+// Use relative path in development (proxied), absolute in production
+const baseURL = import.meta.env.MODE === 'production'
+  ? 'http://localhost:5000/api'
+  : '/api';
+
 const instance = axios.create({
-  baseURL: 'http://localhost:5000/api',
+  baseURL,
   headers: {
     'Content-Type': 'application/json',
   },

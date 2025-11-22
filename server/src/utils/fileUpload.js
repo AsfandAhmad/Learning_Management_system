@@ -13,12 +13,33 @@ const cvDir = path.join(uploadsDir, 'cvs');
 const resourcesDir = path.join(uploadsDir, 'resources');
 const thumbnailsDir = path.join(uploadsDir, 'thumbnails');
 const assignmentsDir = path.join(uploadsDir, 'assignments');
+const videosDir = path.join(uploadsDir, 'videos');
+const documentsDir = path.join(uploadsDir, 'documents');
 
-[uploadsDir, cvDir, resourcesDir, thumbnailsDir, assignmentsDir].forEach(dir => {
+// Create base directories
+[uploadsDir, cvDir, resourcesDir, thumbnailsDir, assignmentsDir, videosDir, documentsDir].forEach(dir => {
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir, { recursive: true });
   }
 });
+
+// Helper function to create course-specific subdirectories
+const ensureCourseDir = (baseDir, courseId) => {
+  const courseDir = path.join(baseDir, String(courseId));
+  if (!fs.existsSync(courseDir)) {
+    fs.mkdirSync(courseDir, { recursive: true });
+  }
+  return courseDir;
+};
+
+// Helper function to create lecture-specific subdirectories
+const ensureLectureDir = (baseDir, courseId, lectureId) => {
+  const lectureDir = path.join(baseDir, String(courseId), String(lectureId));
+  if (!fs.existsSync(lectureDir)) {
+    fs.mkdirSync(lectureDir, { recursive: true });
+  }
+  return lectureDir;
+};
 
 // ==================== CV UPLOAD ====================
 const cvStorage = multer.diskStorage({
@@ -109,6 +130,108 @@ export const uploadResource = multer({
   limits: { fileSize: 50 * 1024 * 1024 }
 }).single('resource');
 
+// ==================== VIDEO LECTURE UPLOAD ====================
+const videoStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const { courseId, lectureId } = req.params;
+    const videoDir = ensureLectureDir(videosDir, courseId, lectureId);
+    cb(null, videoDir);
+  },
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname);
+    const filename = `lecture_${Date.now()}${ext}`;
+    cb(null, filename);
+  }
+});
+
+const videoFilter = (req, file, cb) => {
+  const allowedMimes = [
+    'video/mp4', 'video/webm', 'video/ogg', 'video/quicktime',
+    'application/x-mpegURL', 'video/x-msvideo', 'video/x-ms-wmv'
+  ];
+  if (allowedMimes.includes(file.mimetype)) {
+    cb(null, true);
+  } else {
+    cb(new Error('Only video files (MP4, WebM, OGG, MOV, etc.) are allowed'), false);
+  }
+};
+
+export const uploadVideo = multer({
+  storage: videoStorage,
+  fileFilter: videoFilter,
+  limits: { fileSize: 500 * 1024 * 1024 } // 500MB for videos
+}).single('video');
+
+// ==================== COURSE DOCUMENTS UPLOAD (Teacher Notes, Resources) ====================
+const documentStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const { courseId } = req.params;
+    const docDir = ensureCourseDir(documentsDir, courseId);
+    cb(null, docDir);
+  },
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname);
+    const filename = `doc_${Date.now()}${ext}`;
+    cb(null, filename);
+  }
+});
+
+const documentFilter = (req, file, cb) => {
+  const allowedMimes = [
+    'application/pdf', 'application/zip', 'image/jpeg', 'image/png', 'image/webp',
+    'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    'application/vnd.ms-powerpoint', 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+    'text/plain', 'text/markdown'
+  ];
+  if (allowedMimes.includes(file.mimetype)) {
+    cb(null, true);
+  } else {
+    cb(new Error('File type not allowed for course documents'), false);
+  }
+};
+
+export const uploadDocument = multer({
+  storage: documentStorage,
+  fileFilter: documentFilter,
+  limits: { fileSize: 100 * 1024 * 1024 } // 100MB for documents
+}).single('document');
+
+// ==================== STUDENT SUBMISSION DOCUMENTS ====================
+const studentSubmissionStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const { courseId, lectureId } = req.params;
+    const submissionDir = ensureLectureDir(documentsDir, courseId, `lecture_${lectureId}_submissions`);
+    cb(null, submissionDir);
+  },
+  filename: (req, file, cb) => {
+    const studentId = req.user?.studentId || 'student';
+    const ext = path.extname(file.originalname);
+    const filename = `student_${studentId}_${Date.now()}${ext}`;
+    cb(null, filename);
+  }
+});
+
+const studentSubmissionFilter = (req, file, cb) => {
+  const allowedMimes = [
+    'application/pdf', 'application/zip', 'text/plain',
+    'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    'image/jpeg', 'image/png', 'image/webp'
+  ];
+  if (allowedMimes.includes(file.mimetype)) {
+    cb(null, true);
+  } else {
+    cb(new Error('File type not allowed for submission'), false);
+  }
+};
+
+export const uploadStudentSubmission = multer({
+  storage: studentSubmissionStorage,
+  fileFilter: studentSubmissionFilter,
+  limits: { fileSize: 50 * 1024 * 1024 }
+}).single('submission');
+
 // ==================== ASSIGNMENT SUBMISSION UPLOAD ====================
 const assignmentStorage = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -167,6 +290,9 @@ export default {
   uploadCV,
   uploadThumbnail,
   uploadResource,
+  uploadVideo,
+  uploadDocument,
+  uploadStudentSubmission,
   uploadAssignment,
   deleteFile,
   getFileUrl,
@@ -174,5 +300,9 @@ export default {
   cvDir,
   resourcesDir,
   thumbnailsDir,
-  assignmentsDir
+  assignmentsDir,
+  videosDir,
+  documentsDir,
+  ensureCourseDir,
+  ensureLectureDir
 };
