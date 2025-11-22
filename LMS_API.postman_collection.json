@@ -1,0 +1,992 @@
+{
+  "info": {
+    "name": "LMS API",
+    "description": "Learning Management System API Collection",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "🔐 Authentication",
+      "item": [
+        {
+          "name": "Student Register",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"student@test.com\",\n  \"password\": \"password123\",\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:5000/api/auth/student/register",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5000",
+              "path": ["api", "auth", "student", "register"]
+            }
+          }
+        },
+        {
+          "name": "Student Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"student@test.com\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:5000/api/auth/student/login",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5000",
+              "path": ["api", "auth", "student", "login"]
+            }
+          }
+        },
+        {
+          "name": "Teacher Register",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"teacher@test.com\",\n  \"password\": \"password123\",\n  \"firstName\": \"Jane\",\n  \"lastName\": \"Smith\",\n  \"department\": \"Computer Science\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:5000/api/auth/teacher/register",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5000",
+              "path": ["api", "auth", "teacher", "register"]
+            }
+          }
+        },
+        {
+          "name": "Teacher Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"teacher@test.com\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:5000/api/auth/teacher/login",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5000",
+              "path": ["api", "auth", "teacher", "login"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "📚 Courses",
+      "item": [
+        {
+          "name": "Get All Courses",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:5000/api/courses",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5000",
+              "path": ["api", "courses"]
+            }
+          }
+        },
+        {
+          "name": "Get Course by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:5000/api/courses/1",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5000",
+              "path": ["api", "courses", "1"]
+            }
+          }
+        },
+        {
+          "name": "Create Course",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Web Development 101\",\n  \"description\": \"Learn modern web development\",\n  \"teacherId\": 1\n}"
+            },
+            "url": {
+              "raw": "http://localhost:5000/api/courses",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5000",
+              "path": ["api", "courses"]
+            }
+          }
+        },
+        {
+          "name": "Update Course",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Web Development 201\",\n  \"description\": \"Advanced web development\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:5000/api/courses/1",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5000",
+              "path": ["api", "courses", "1"]
+            }
+          }
+        },
+        {
+          "name": "Delete Course",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:5000/api/courses/1",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5000",
+              "path": ["api", "courses", "1"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "👨‍🏫 Teachers",
+      "item": [
+        {
+          "name": "Get All Teachers",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:5000/api/teachers",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5000",
+              "path": ["api", "teachers"]
+            }
+          }
+        },
+        {
+          "name": "Get Teacher by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:5000/api/teachers/1",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5000",
+              "path": ["api", "teachers", "1"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "👥 Students",
+      "item": [
+        {
+          "name": "Get All Students",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:5000/api/students",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5000",
+              "path": ["api", "students"]
+            }
+          }
+        },
+        {
+          "name": "Get Student by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:5000/api/students/1",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5000",
+              "path": ["api", "students", "1"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "📖 Sections",
+      "item": [
+        {
+          "name": "Get All Sections",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:5000/api/sections",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5000",
+              "path": ["api", "sections"]
+            }
+          }
+        },
+        {
+          "name": "Get Section by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:5000/api/sections/1",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5000",
+              "path": ["api", "sections", "1"]
+            }
+          }
+        },
+        {
+          "name": "Create Section",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"courseId\": 1,\n  \"name\": \"Section 1: Basics\",\n  \"description\": \"Introduction to basics\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:5000/api/sections",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5000",
+              "path": ["api", "sections"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "📚 Lessons",
+      "item": [
+        {
+          "name": "Get All Lessons",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:5000/api/lessons",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5000",
+              "path": ["api", "lessons"]
+            }
+          }
+        },
+        {
+          "name": "Get Lesson by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:5000/api/lessons/1",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5000",
+              "path": ["api", "lessons", "1"]
+            }
+          }
+        },
+        {
+          "name": "Create Lesson",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sectionId\": 1,\n  \"title\": \"Lesson 1: Getting Started\",\n  \"content\": \"Welcome to lesson 1\",\n  \"videoUrl\": \"https://example.com/video1.mp4\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:5000/api/lessons",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5000",
+              "path": ["api", "lessons"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "📝 Quiz",
+      "item": [
+        {
+          "name": "Get All Quizzes",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:5000/api/quizzes",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5000",
+              "path": ["api", "quizzes"]
+            }
+          }
+        },
+        {
+          "name": "Get Quiz by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:5000/api/quizzes/1",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5000",
+              "path": ["api", "quizzes", "1"]
+            }
+          }
+        },
+        {
+          "name": "Create Quiz",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"courseId\": 1,\n  \"title\": \"Quiz 1: Basics\",\n  \"description\": \"Test your knowledge on basics\",\n  \"totalQuestions\": 5,\n  \"timeLimit\": 30,\n  \"passingScore\": 60\n}"
+            },
+            "url": {
+              "raw": "http://localhost:5000/api/quizzes",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5000",
+              "path": ["api", "quizzes"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "❓ Questions (NEW)",
+      "item": [
+        {
+          "name": "Get Quiz Questions",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:5000/api/courses/1/quizzes/1/questions",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5000",
+              "path": ["api", "courses", "1", "quizzes", "1", "questions"]
+            }
+          }
+        },
+        {
+          "name": "Get Single Question",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:5000/api/courses/1/questions/1",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5000",
+              "path": ["api", "courses", "1", "questions", "1"]
+            }
+          }
+        },
+        {
+          "name": "Create Question",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"quizId\": 1,\n  \"questionText\": \"What is 2 + 2?\",\n  \"questionType\": \"multiple-choice\",\n  \"options\": [\n    \"3\",\n    \"4\",\n    \"5\",\n    \"6\"\n  ],\n  \"correctAnswer\": \"4\",\n  \"points\": 10\n}"
+            },
+            "url": {
+              "raw": "http://localhost:5000/api/courses/1/quizzes/1/questions",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5000",
+              "path": ["api", "courses", "1", "quizzes", "1", "questions"]
+            }
+          }
+        },
+        {
+          "name": "Bulk Create Questions",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"quizId\": 1,\n  \"questions\": [\n    {\n      \"questionText\": \"Question 1?\",\n      \"questionType\": \"multiple-choice\",\n      \"options\": [\"A\", \"B\", \"C\", \"D\"],\n      \"correctAnswer\": \"A\",\n      \"points\": 10\n    },\n    {\n      \"questionText\": \"Question 2?\",\n      \"questionType\": \"multiple-choice\",\n      \"options\": [\"A\", \"B\", \"C\", \"D\"],\n      \"correctAnswer\": \"B\",\n      \"points\": 10\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "http://localhost:5000/api/courses/1/quizzes/1/questions/bulk",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5000",
+              "path": ["api", "courses", "1", "quizzes", "1", "questions", "bulk"]
+            }
+          }
+        },
+        {
+          "name": "Get Question Answer Key",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:5000/api/courses/1/quizzes/1/questions/answer-key",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5000",
+              "path": ["api", "courses", "1", "quizzes", "1", "questions", "answer-key"]
+            }
+          }
+        },
+        {
+          "name": "Update Question",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"questionText\": \"Updated question?\",\n  \"options\": [\"A\", \"B\", \"C\", \"D\"],\n  \"correctAnswer\": \"C\",\n  \"points\": 20\n}"
+            },
+            "url": {
+              "raw": "http://localhost:5000/api/courses/1/questions/1",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5000",
+              "path": ["api", "courses", "1", "questions", "1"]
+            }
+          }
+        },
+        {
+          "name": "Delete Question",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:5000/api/courses/1/questions/1",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5000",
+              "path": ["api", "courses", "1", "questions", "1"]
+            }
+          }
+        },
+        {
+          "name": "Get Question Statistics",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:5000/api/courses/1/quizzes/1/questions/stats",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5000",
+              "path": ["api", "courses", "1", "quizzes", "1", "questions", "stats"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "📊 Activity Log (NEW)",
+      "item": [
+        {
+          "name": "Get Student Activities",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:5000/api/student/activities",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5000",
+              "path": ["api", "student", "activities"]
+            }
+          }
+        },
+        {
+          "name": "Get Activity Summary",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:5000/api/student/activity-summary",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5000",
+              "path": ["api", "student", "activity-summary"]
+            }
+          }
+        },
+        {
+          "name": "Get Course Activities",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:5000/api/courses/1/activities",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5000",
+              "path": ["api", "courses", "1", "activities"]
+            }
+          }
+        },
+        {
+          "name": "Get Course Activity Stats",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:5000/api/courses/1/activities/stats",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5000",
+              "path": ["api", "courses", "1", "activities", "stats"]
+            }
+          }
+        },
+        {
+          "name": "Log Activity",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"courseId\": 1,\n  \"studentId\": 1,\n  \"activityType\": \"lesson_viewed\",\n  \"lessonId\": 1,\n  \"description\": \"Student viewed lesson\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:5000/api/courses/1/activities/log",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5000",
+              "path": ["api", "courses", "1", "activities", "log"]
+            }
+          }
+        },
+        {
+          "name": "Get Lesson Activity History",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:5000/api/courses/1/lessons/1/activity-history",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5000",
+              "path": ["api", "courses", "1", "lessons", "1", "activity-history"]
+            }
+          }
+        },
+        {
+          "name": "Get Class Activity",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:5000/api/courses/1/class-activity",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5000",
+              "path": ["api", "courses", "1", "class-activity"]
+            }
+          }
+        },
+        {
+          "name": "Delete Activity",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:5000/api/activities/1",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5000",
+              "path": ["api", "activities", "1"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "📄 Assignments",
+      "item": [
+        {
+          "name": "Get All Assignments",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:5000/api/assignments",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5000",
+              "path": ["api", "assignments"]
+            }
+          }
+        },
+        {
+          "name": "Get Assignment by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:5000/api/assignments/1",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5000",
+              "path": ["api", "assignments", "1"]
+            }
+          }
+        },
+        {
+          "name": "Create Assignment",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"courseId\": 1,\n  \"title\": \"Assignment 1\",\n  \"description\": \"Complete this assignment\",\n  \"dueDate\": \"2025-12-31\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:5000/api/assignments",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5000",
+              "path": ["api", "assignments"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🎓 Enrollment",
+      "item": [
+        {
+          "name": "Get All Enrollments",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:5000/api/enrollment",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5000",
+              "path": ["api", "enrollment"]
+            }
+          }
+        },
+        {
+          "name": "Enroll Student in Course",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"courseId\": 1,\n  \"studentId\": 1\n}"
+            },
+            "url": {
+              "raw": "http://localhost:5000/api/enrollment",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5000",
+              "path": ["api", "enrollment"]
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "token",
+      "value": "your_jwt_token_here",
+      "type": "string"
+    }
+  ]
+}
