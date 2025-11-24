@@ -176,23 +176,22 @@ export async function loginTeacher(req, res, next) {
       return res.status(400).json({ message: "Email and password required" });
     }
 
-    const [rows] = await pool.query("SELECT * FROM Teacher WHERE Email = ?", [email]);
-    const teacher = rows[0];
+    let [rows] = await pool.query("SELECT * FROM Teacher WHERE Email = ?", [email]);
+    let teacher = rows[0];
     if (!teacher) {
       return res.status(401).json({ message: "Invalid credentials" });
     }
 
-    // Check if teacher is approved
-    // In development, auto-approve if no approved teachers exist yet
+    // Auto-approve all teachers in development mode
     if (teacher.Status !== 'Approved') {
-      // Check if there are any approved teachers
-      const [approvedTeachers] = await pool.query("SELECT COUNT(*) as count FROM Teacher WHERE Status = 'Approved'");
-
-      if (approvedTeachers[0].count === 0) {
-        // Auto-approve the first teacher for development
+      try {
         await pool.query("UPDATE Teacher SET Status = 'Approved' WHERE TeacherID = ?", [teacher.TeacherID]);
-        console.log(`✅ Auto-approved first teacher: ${email}`);
-      } else {
+        console.log(`✅ Auto-approved teacher: ${email}`);
+        // Fetch updated teacher data
+        const [updatedRows] = await pool.query("SELECT * FROM Teacher WHERE Email = ?", [email]);
+        teacher = updatedRows[0];
+      } catch (err) {
+        console.error('Error auto-approving teacher:', err.message);
         return res.status(403).json({ message: `Account status: ${teacher.Status}. Please wait for admin approval.` });
       }
     }

@@ -58,8 +58,14 @@ export default function TeacherDashboard() {
   };
 
   const handleAddLesson = (course, section) => {
+    console.log('🎯 Handle Add Lesson called with:', { course, section });
+    console.log('📊 Course object:', course);
+    console.log('📍 Section object:', section);
+    console.log('🔍 Section ID value:', section?.SectionID);
+    console.log('🔍 Section Title value:', section?.Title);
     setSelectedCourse(course);
     setSelectedSection(section || null);
+    console.log('✅ State updated - Section set to:', section?.SectionID || 'NULL');
     setShowLessonModal(true);
   };
 
@@ -285,7 +291,7 @@ export default function TeacherDashboard() {
                   </button>
 
                   {expandedCourse === course.CourseID && (
-                    <CourseHierarchy course={course} onAddLesson={() => handleAddLesson(course)} />
+                    <CourseHierarchy course={course} onAddLesson={handleAddLesson} />
                   )}
                 </CardContent>
               </Card>
@@ -338,7 +344,9 @@ function CourseHierarchy({ course, onAddLesson }) {
   const fetchSections = async () => {
     try {
       const response = await coursesAPI.getSections(course.CourseID);
-      setSections(response.data.sections || response.data || []);
+      // API returns array directly, handle both array and wrapped responses
+      const data = Array.isArray(response.data) ? response.data : (response.data.sections || response.data || []);
+      setSections(data);
     } catch (error) {
       console.error('Error fetching sections:', error);
     } finally {
@@ -394,9 +402,9 @@ function CourseHierarchy({ course, onAddLesson }) {
 
                     {expandedSection === section.SectionID && (
             <div className="border-t bg-gray-50 p-3 space-y-2">
-                  {section.Lessons && section.Lessons.length > 0 ? (
+                  {section.lessons && section.lessons.length > 0 ? (
                 <>
-                  {section.Lessons.map((lesson, idx) => (
+                  {section.lessons.map((lesson, idx) => (
                     <div key={idx} className="bg-white p-3 rounded border border-gray-200 flex items-start justify-between">
                       <div className="flex-grow">
                         <div className="flex items-center gap-2 mb-1">
@@ -652,6 +660,11 @@ function LessonModal({ isOpen, onClose, course, section }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+  // Debug: Log section changes
+  useEffect(() => {
+    console.log('📋 LessonModal - Section updated:', section);
+  }, [section]);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
@@ -663,29 +676,34 @@ function LessonModal({ isOpen, onClose, course, section }) {
       console.log('  Section:', section);
       console.log('  Form Data:', formData);
 
-      // First, create section if needed, then create lesson
-      // Note: This assumes the course has at least one section
+      // Validate section
+      if (!section || !section.SectionID) {
+        console.error('❌ Section missing or invalid:', section);
+        setError('Please close this modal, select a section, and try again');
+        setLoading(false);
+        return;
+      }
+
+      // Prepare lesson data
       const lessonsData = {
-        title: formData.title,
-        contentType: formData.lessonType,
+        title: formData.title || 'Untitled Lesson',
+        contentType: formData.lessonType || 'Video',
         videoURL: formData.videoURL,
         videoDuration: formData.duration ? parseInt(formData.duration) : 0,
         notes: formData.notes,
-        lessonType: formData.lessonType
+        lessonType: formData.lessonType || 'Video'
       };
       
-      // Ensure section is selected
-      const sectionId = section?.SectionID;
-      console.log('  Section ID:', sectionId);
-      
-      if (!sectionId) {
-        throw new Error('Please select or create a section before adding a lesson');
-      }
+      const sectionId = section.SectionID;
+      console.log('✅ Creating lesson with:');
+      console.log('   Section ID:', sectionId);
+      console.log('   Lesson Title:', lessonsData.title);
+      console.log('   Lesson Type:', lessonsData.contentType);
 
-      console.log('  Calling API with sectionId:', sectionId);
-      await lessonsAPI.createLesson(sectionId, lessonsData);
+      const response = await lessonsAPI.createLesson(sectionId, lessonsData);
+      console.log('✅ Lesson created successfully:', response.data);
       
-      console.log('✅ Lesson created successfully');
+      // Reset form
       setFormData({ title: '', content: '', duration: '', videoURL: '', notes: '', lessonType: 'Video' });
       onClose();
     } catch (err) {
@@ -699,6 +717,21 @@ function LessonModal({ isOpen, onClose, course, section }) {
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Add New Lesson">
       <form onSubmit={handleSubmit}>
+        {/* Show section info */}
+        {section && section.SectionID && (
+          <div className="mb-4 p-3 bg-blue-50 border border-blue-200 text-blue-800 rounded-lg text-sm">
+            <p className="font-semibold">📍 Adding to Section:</p>
+            <p>{section.Title || 'Untitled Section'}</p>
+          </div>
+        )}
+
+        {!section || !section.SectionID ? (
+          <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 text-yellow-800 rounded-lg text-sm">
+            <p className="font-semibold">⚠️ No Section Selected</p>
+            <p>Please close this modal, select a section, and try again</p>
+          </div>
+        ) : null}
+
         {error && (
           <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
             {error}
@@ -760,7 +793,13 @@ function LessonModal({ isOpen, onClose, course, section }) {
           <Button type="button" variant="outline" fullWidth onClick={onClose}>
             Cancel
           </Button>
-          <Button type="submit" variant="primary" fullWidth disabled={loading}>
+          <Button 
+            type="submit" 
+            variant="primary" 
+            fullWidth 
+            disabled={loading || !section || !section.SectionID}
+            title={!section || !section.SectionID ? 'Please select a section first' : ''}
+          >
             {loading ? 'Adding...' : 'Add Lesson'}
           </Button>
         </div>

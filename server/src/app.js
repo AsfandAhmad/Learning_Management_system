@@ -36,6 +36,14 @@ app.use('/uploads', express.static(uploadsPath));
 
 app.get("/api/health", (_, res) => res.json({ ok: true }));
 
+// Debug middleware - log all requests
+app.use((req, res, next) => {
+    console.log(`📍 ${req.method} ${req.path}`);
+    console.log('   Params:', req.params);
+    console.log('   User:', req.user ? `${req.user.teacherId || req.user.studentId || 'unknown'}` : 'none');
+    next();
+});
+
 // Authentication routes
 app.use("/api/auth", authRoutes);
 

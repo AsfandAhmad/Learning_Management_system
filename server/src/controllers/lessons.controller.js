@@ -68,6 +68,19 @@ export async function getLessonById(req, res, next) {
 export async function createLesson(req, res, next) {
     try {
         const { sectionId } = req.params;
+
+        // Validate sectionId exists
+        if (!sectionId) {
+            console.error('❌ sectionId is missing from params');
+            return res.status(400).json({ message: 'Section ID is required' });
+        }
+
+        // Validate req.user exists
+        if (!req.user) {
+            console.error('❌ req.user is missing - authorization failed');
+            return res.status(401).json({ message: 'User not authenticated' });
+        }
+
         // Accept both Title/title and different casings from client
         const title = req.body.Title || req.body.title || null;
         const contentType = req.body.ContentType || req.body.contentType || req.body.content || null;
@@ -77,7 +90,7 @@ export async function createLesson(req, res, next) {
         const notes = req.body.Notes || req.body.notes || null;
         const lessonType = req.body.LessonType || req.body.lessonType || 'Mixed';
         let positionOrder = req.body.PositionOrder || req.body.positionOrder || null;
-        const teacherId = req.user.teacherId;
+        const teacherId = req.user?.teacherId;
 
         console.log('🎓 Lesson Creation Request:');
         console.log('  Section ID:', sectionId);
@@ -85,6 +98,12 @@ export async function createLesson(req, res, next) {
         console.log('  Content Type:', contentType);
         console.log('  Teacher ID:', teacherId);
         console.log('  Request Body:', req.body);
+        console.log('  req.user:', req.user);
+
+        if (!teacherId) {
+            console.error('❌ teacherId missing from req.user');
+            return res.status(401).json({ message: 'Authentication required - teacher ID not found in token' });
+        }
 
         if (!title || !String(title).trim()) {
             return res.status(400).json({ message: 'Lesson title is required' });
@@ -121,6 +140,8 @@ export async function createLesson(req, res, next) {
         res.status(201).json({ LessonID: result.insertId, message: "Lesson created successfully" });
     } catch (e) {
         console.error('❌ Lesson creation error:', e.message);
+        console.error('   Stack:', e.stack);
+        console.error('   Full error:', e);
         next(e);
     }
 }
