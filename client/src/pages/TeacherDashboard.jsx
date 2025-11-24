@@ -658,6 +658,11 @@ function LessonModal({ isOpen, onClose, course, section }) {
     setLoading(true);
 
     try {
+      console.log('📝 Lesson submission started');
+      console.log('  Course:', course);
+      console.log('  Section:', section);
+      console.log('  Form Data:', formData);
+
       // First, create section if needed, then create lesson
       // Note: This assumes the course has at least one section
       const lessonsData = {
@@ -671,15 +676,21 @@ function LessonModal({ isOpen, onClose, course, section }) {
       
       // Ensure section is selected
       const sectionId = section?.SectionID;
+      console.log('  Section ID:', sectionId);
+      
       if (!sectionId) {
         throw new Error('Please select or create a section before adding a lesson');
       }
 
+      console.log('  Calling API with sectionId:', sectionId);
       await lessonsAPI.createLesson(sectionId, lessonsData);
+      
+      console.log('✅ Lesson created successfully');
       setFormData({ title: '', content: '', duration: '', videoURL: '', notes: '', lessonType: 'Video' });
       onClose();
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to create lesson');
+      console.error('❌ Lesson creation error:', err);
+      setError(err.response?.data?.message || err.message || 'Failed to create lesson');
     } finally {
       setLoading(false);
     }

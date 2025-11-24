@@ -79,6 +79,13 @@ export async function createLesson(req, res, next) {
         let positionOrder = req.body.PositionOrder || req.body.positionOrder || null;
         const teacherId = req.user.teacherId;
 
+        console.log('🎓 Lesson Creation Request:');
+        console.log('  Section ID:', sectionId);
+        console.log('  Title:', title);
+        console.log('  Content Type:', contentType);
+        console.log('  Teacher ID:', teacherId);
+        console.log('  Request Body:', req.body);
+
         if (!title || !String(title).trim()) {
             return res.status(400).json({ message: 'Lesson title is required' });
         }
@@ -101,13 +108,21 @@ export async function createLesson(req, res, next) {
         // Use ContentURL for the URL (combined video and content storage)
         const lessonURL = contentURL || videoURL;
 
+        console.log('  Position Order:', positionOrder);
+        console.log('  Lesson URL:', lessonURL || '(will be set on video upload)');
+
         const [result] = await pool.query(
             `INSERT INTO Lesson (SectionID, Title, ContentType, ContentURL, PositionOrder) 
              VALUES (?, ?, ?, ?, ?)`,
             [sectionId, title, contentType, lessonURL, positionOrder]
         );
+
+        console.log('✅ Lesson created successfully. ID:', result.insertId);
         res.status(201).json({ LessonID: result.insertId, message: "Lesson created successfully" });
-    } catch (e) { next(e); }
+    } catch (e) {
+        console.error('❌ Lesson creation error:', e.message);
+        next(e);
+    }
 }
 
 // PUT update lesson (teacher only)
