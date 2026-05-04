@@ -1,16 +1,29 @@
 import axios from 'axios';
 
-const rawApiUrl = import.meta.env.VITE_API_URL;
-const normalizedApiUrl = rawApiUrl
-  ? rawApiUrl.replace(/\/$/, '')
-  : null;
+function normalizeApiBaseUrl(input) {
+  if (!input) return null;
 
-// Always prefer explicit backend URL in production via VITE_API_URL.
-// `/api` fallback is only safe when a proxy/rewrite is configured.
-const baseURL = normalizedApiUrl || '/api';
+  let value = input.trim();
+  if (!/^https?:\/\//i.test(value)) {
+    value = `https://${value}`;
+  }
 
-if (import.meta.env.PROD && !normalizedApiUrl) {
-  console.warn('VITE_API_URL is not set in production. API calls will use /api and may fail without a Vercel rewrite.');
+  const url = new URL(value);
+  const pathname = url.pathname.replace(/\/+$/, '');
+
+  if (!pathname || pathname === '') {
+    url.pathname = '/api';
+  } else if (!pathname.endsWith('/api')) {
+    url.pathname = `${pathname}/api`;
+  }
+
+  return url.toString().replace(/\/+$/, '');
+}
+
+const baseURL = normalizeApiBaseUrl(import.meta.env.VITE_API_URL) || '/api';
+
+if (import.meta.env.PROD && !import.meta.env.VITE_API_URL) {
+  console.warn('VITE_API_URL is not set in production. API calls will use /api and may fail without a rewrite.');
 }
 
 const instance = axios.create({
