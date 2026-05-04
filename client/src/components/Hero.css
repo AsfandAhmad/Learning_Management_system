@@ -1,0 +1,321 @@
+/* Hero Container */
+.hero-container {
+  position: relative;
+  overflow: hidden;
+}
+
+/* Decorative background circles */
+.hero-bg-circle-1 {
+  position: absolute;
+  width: 220px;
+  height: 220px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.06);
+  top: -60px;
+  right: -40px;
+  pointer-events: none;
+}
+
+.hero-bg-circle-2 {
+  position: absolute;
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.04);
+  bottom: -30px;
+  right: 80px;
+  pointer-events: none;
+}
+
+/* 3D Scene Container */
+.hero-3d-scene {
+  width: 320px;
+  height: 280px;
+  position: relative;
+  flex-shrink: 0;
+  perspective: 1000px;
+  z-index: 5;
+}
+
+/* 3D Book Styles */
+.book-3d {
+  position: absolute;
+  transform-style: preserve-3d;
+  width: 54px;
+  height: 70px;
+  cursor: pointer;
+  transition: transform 0.3s ease;
+}
+
+.book-3d:hover {
+  transform: scale(1.1) !important;
+}
+
+.book-cover {
+  position: absolute;
+  width: 54px;
+  height: 70px;
+  border-radius: 2px 6px 6px 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backface-visibility: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  font-size: 28px;
+}
+
+.book-spine {
+  position: absolute;
+  left: -12px;
+  top: 2px;
+  width: 12px;
+  height: 66px;
+  transform: rotateY(-90deg) translateZ(-1px);
+  border-radius: 2px 0 0 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.book-spine-text {
+  color: white;
+  font-size: 9px;
+  font-weight: 700;
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  letter-spacing: 1px;
+}
+
+.book-pages {
+  position: absolute;
+  right: -8px;
+  top: 2px;
+  width: 8px;
+  height: 66px;
+  background: #f5f0e8;
+  transform: rotateY(90deg) translateZ(53px);
+  box-shadow: inset -2px 0 4px rgba(0, 0, 0, 0.1);
+}
+
+.book-icon {
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+}
+
+/* Book Animations */
+.book-1 {
+  animation: floatBob1 4s ease-in-out infinite;
+  transform: rotateY(-25deg) rotateX(5deg) rotate(-8deg);
+}
+
+.book-2 {
+  animation: floatBob2 4s ease-in-out infinite;
+  animation-delay: -1.3s;
+  transform: rotateY(-25deg) rotateX(5deg) rotate(5deg);
+}
+
+.book-3 {
+  animation: floatBob3 4s ease-in-out infinite;
+  animation-delay: -2.6s;
+  transform: rotateY(-25deg) rotateX(5deg) rotate(-3deg);
+}
+
+/* Graduation Cap */
+.grad-cap {
+  position: absolute;
+  width: 60px;
+  height: 60px;
+  animation: floatBob4 4s ease-in-out infinite;
+  animation-delay: -0.8s;
+  transform: rotate(-12deg);
+  cursor: pointer;
+  transition: transform 0.3s ease;
+}
+
+.grad-cap:hover {
+  transform: rotate(-12deg) scale(1.15) !important;
+}
+
+.cap-top {
+  position: absolute;
+  width: 50px;
+  height: 50px;
+  background: #f39c12;
+  transform: rotate(45deg);
+  top: 0;
+  left: 5px;
+  border: 2px solid #d68910;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.cap-base {
+  position: absolute;
+  width: 30px;
+  height: 12px;
+  background: #f39c12;
+  border-radius: 15px 15px 0 0;
+  bottom: 8px;
+  left: 15px;
+  border: 2px solid #d68910;
+  border-bottom: none;
+}
+
+.cap-tassel {
+  position: absolute;
+  width: 2px;
+  height: 20px;
+  background: #d68910;
+  top: 20px;
+  right: 8px;
+  transform: rotate(15deg);
+}
+
+.cap-tassel::after {
+  content: '';
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  background: #d68910;
+  border-radius: 50%;
+  bottom: -8px;
+  left: -3px;
+}
+
+/* Floating Badge Card */
+.floating-badge {
+  position: absolute;
+  background: white;
+  padding: 12px 18px;
+  border-radius: 12px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+  animation: floatBob5 3.5s ease-in-out infinite;
+  animation-delay: -2s;
+  transform: rotate(3deg);
+  cursor: pointer;
+  transition: transform 0.3s ease;
+}
+
+.floating-badge:hover {
+  transform: rotate(3deg) scale(1.1) !important;
+}
+
+.badge-text-main {
+  font-size: 14px;
+  font-weight: 700;
+  color: #6b00b3;
+  line-height: 1.2;
+  margin-bottom: 2px;
+}
+
+.badge-text-sub {
+  font-size: 11px;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+/* Gold Stars */
+.gold-star {
+  position: absolute;
+  width: 28px;
+  height: 28px;
+  background: #f1c40f;
+  clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+  filter: drop-shadow(0 2px 6px rgba(241, 196, 15, 0.4));
+  cursor: pointer;
+  transition: transform 0.3s ease;
+}
+
+.gold-star:hover {
+  transform: scale(1.2) rotate(72deg) !important;
+}
+
+.star-1 {
+  animation: floatBob6 4.5s ease-in-out infinite, rotateStar 8s linear infinite;
+  animation-delay: -1.8s, 0s;
+}
+
+.star-2 {
+  animation: floatBob7 4.5s ease-in-out infinite, rotateStar 8s linear infinite;
+  animation-delay: -3s, -2s;
+  width: 22px;
+  height: 22px;
+}
+
+/* Floating Animations */
+@keyframes floatBob1 {
+  0%, 100% {
+    transform: translateY(0px) rotateY(-25deg) rotateX(5deg) rotate(-8deg);
+  }
+  50% {
+    transform: translateY(-14px) rotateY(-25deg) rotateX(5deg) rotate(-8deg);
+  }
+}
+
+@keyframes floatBob2 {
+  0%, 100% {
+    transform: translateY(0px) rotateY(-25deg) rotateX(5deg) rotate(5deg);
+  }
+  50% {
+    transform: translateY(-14px) rotateY(-25deg) rotateX(5deg) rotate(5deg);
+  }
+}
+
+@keyframes floatBob3 {
+  0%, 100% {
+    transform: translateY(0px) rotateY(-25deg) rotateX(5deg) rotate(-3deg);
+  }
+  50% {
+    transform: translateY(-14px) rotateY(-25deg) rotateX(5deg) rotate(-3deg);
+  }
+}
+
+@keyframes floatBob4 {
+  0%, 100% {
+    transform: translateY(0px) rotate(-12deg);
+  }
+  50% {
+    transform: translateY(-14px) rotate(-12deg);
+  }
+}
+
+@keyframes floatBob5 {
+  0%, 100% {
+    transform: translateY(0px) rotate(3deg);
+  }
+  50% {
+    transform: translateY(-12px) rotate(3deg);
+  }
+}
+
+@keyframes floatBob6 {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-14px);
+  }
+}
+
+@keyframes floatBob7 {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-12px);
+  }
+}
+
+@keyframes rotateStar {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* Responsive - Hide 3D scene on smaller screens */
+@media (max-width: 1023px) {
+  .hero-3d-scene {
+    display: none;
+  }
+}

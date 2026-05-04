@@ -1,0 +1,79 @@
+@import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+
+:root {
+  --primary:      #6b00b3;   /* primary — darker purple for sidebar, navbar, buttons */
+  --primary-dark: #4a007d;   /* hover states — even darker purple */
+  --primary-light: #f3e6ff;  /* soft purple tints for subtle accents */
+  
+  --page-bg:      #f0f4f8;   /* light grey-blue page background */
+  --card-bg:      #ffffff;   /* all cards */
+  --navbar-bg:    #6b00b3;   /* top navbar — darker purple */
+  --sidebar-bg:   #6b00b3;   /* left sidebar — darker purple */
+  
+  --text-dark:    #1a1a2e;   /* body text on white */
+  --text-muted:   #6b7280;   /* secondary text */
+  --text-on-primary: #ffffff; /* any text sitting on purple */
+  
+  --border:       #e5e7eb;   /* card borders, dividers */
+  
+  /* Category badge colors — keep these funky & distinct */
+  --badge-1:  #2980b9;   /* blue     — IT & Software */
+  --badge-2:  #e67e22;   /* orange   — Programming */
+  --badge-3:  #e74c3c;   /* coral    — Networking */
+  --badge-4:  #16a085;   /* teal     — Network Security */
+  --badge-5:  #8e44ad;   /* purple   — Design */
+  --badge-6:  #27ae60;   /* green    — Business */
+}
+
+body {
+  background-color: var(--page-bg);
+  color: var(--text-dark);
+  font-family: 'Plus Jakarta Sans', sans-serif;
+}
+
+/* Scrollbar styling */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #6b00b3 #f0f4f8;
+}
+
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+*::-webkit-scrollbar-track {
+  background: #f0f4f8;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: #6b00b3;
+  border-radius: 4px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: #4a007d;
+}
+
+/* Selection highlight */
+::selection {
+  background: #6b00b3;
+  color: white;
+}
+
+::-moz-selection {
+  background: #6b00b3;
+  color: white;
+}
+
+/* Focus rings */
+*:focus-visible {
+  outline: 2px solid #6b00b3;
+  outline-offset: 2px;
+}
+
+/* Smooth transitions */
+* {
+  transition: all 0.2s ease;
+}
