@@ -54,7 +54,11 @@ app.use(cors({
   },
   credentials: true
 }));
+// Parse JSON bodies
 app.use(express.json());
+// Also accept URL-encoded bodies (forms) to avoid JSON parse errors when clients
+// submit `application/x-www-form-urlencoded` payloads.
+app.use(express.urlencoded({ extended: true }));
 app.use(morgan("dev"));
 app.use(express.static('public'));
 
@@ -70,6 +74,15 @@ app.use((req, res, next) => {
     console.log('   Params:', req.params);
     console.log('   User:', req.user ? `${req.user.teacherId || req.user.studentId || 'unknown'}` : 'none');
     next();
+});
+
+// JSON parse error handler (body-parser/express.json throws SyntaxError on bad JSON)
+app.use((err, req, res, next) => {
+  if (err && err instanceof SyntaxError && err.status === 400 && 'body' in err) {
+    console.error('Invalid JSON payload received:', err.message);
+    return res.status(400).json({ message: 'Invalid JSON payload' });
+  }
+  next(err);
 });
 
 // Authentication routes

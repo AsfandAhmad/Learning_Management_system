@@ -386,18 +386,18 @@ CREATE TABLE IF NOT EXISTS ActivityLog (
 -- ==========================================
 
 -- Performance Indexes (Additional)
-CREATE INDEX IF NOT EXISTS idx_teacher_status ON Teacher(Status);
-CREATE INDEX IF NOT EXISTS idx_course_teacher_status ON Course(TeacherID, Status);
-CREATE INDEX IF NOT EXISTS idx_lesson_section_position ON Lesson(SectionID, PositionOrder);
-CREATE INDEX IF NOT EXISTS idx_section_course_position ON Section(CourseID, PositionOrder);
-CREATE INDEX IF NOT EXISTS idx_enrollment_status ON Enrollment(Status);
-CREATE INDEX IF NOT EXISTS idx_lesson_progress_student_lesson ON LessonProgress(StudentID, LessonID);
-CREATE INDEX IF NOT EXISTS idx_student_notes_student_lesson ON StudentNotes(StudentID, LessonID);
-CREATE INDEX IF NOT EXISTS idx_assignment_section ON Assignment(SectionID);
-CREATE INDEX IF NOT EXISTS idx_quiz_attempt_student ON QuizAttempt(StudentID);
-CREATE INDEX IF NOT EXISTS idx_quiz_attempt_quiz ON QuizAttempt(QuizID);
-CREATE INDEX IF NOT EXISTS idx_assignment_submission_student ON AssignmentSubmission(StudentID);
-CREATE INDEX IF NOT EXISTS idx_certificate_enrollment ON Certificate(EnrollmentID);
+CREATE INDEX idx_teacher_status ON Teacher(Status);
+CREATE INDEX idx_course_teacher_status ON Course(TeacherID, Status);
+CREATE INDEX idx_lesson_section_position ON Lesson(SectionID, PositionOrder);
+CREATE INDEX idx_section_course_position ON Section(CourseID, PositionOrder);
+CREATE INDEX idx_enrollment_status ON Enrollment(Status);
+CREATE INDEX idx_lesson_progress_student_lesson ON LessonProgress(StudentID, LessonID);
+CREATE INDEX idx_student_notes_student_lesson ON StudentNotes(StudentID, LessonID);
+CREATE INDEX idx_assignment_section ON Assignment(SectionID);
+CREATE INDEX idx_quiz_attempt_student ON QuizAttempt(StudentID);
+CREATE INDEX idx_quiz_attempt_quiz ON QuizAttempt(QuizID);
+CREATE INDEX idx_assignment_submission_student ON AssignmentSubmission(StudentID);
+CREATE INDEX idx_certificate_enrollment ON Certificate(EnrollmentID);
 
 -- ==========================================
 -- 8. VIEW FOR COMMON QUERIES (Optional)
