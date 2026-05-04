@@ -18,8 +18,14 @@ export async function getStudentEnrollments(req, res, next) {
             [studentId]
         );
         res.json(enrollments);
-    } catch (e) { next(e); }
+    } catch (e) {
+        if (e && (e.code === 'ER_NO_SUCH_TABLE' || e.code === 'ER_BAD_TABLE_ERROR')) {
+            return res.json([]);
+        }
+        next(e);
+    }
 }
+
 
 // GET single enrollment details
 export async function getEnrollmentById(req, res, next) {

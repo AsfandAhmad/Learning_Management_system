@@ -14,6 +14,9 @@ export async function listCourses(req, res, next) {
     );
     res.json(courses);
   } catch (e) {
+    if (e && (e.code === 'ER_NO_SUCH_TABLE' || e.code === 'ER_BAD_TABLE_ERROR')) {
+      return res.json([]);
+    }
     next(e);
   }
 }
