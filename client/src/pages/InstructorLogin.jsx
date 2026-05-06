@@ -78,7 +78,7 @@ export default function InstructorLogin() {
           </label>
         </div>
 
-        <Button type="submit" variant="primary" disabled={loading}>
+        <Button type="submit" variant="primary" fullWidth disabled={loading}>
           {loading ? 'Signing in...' : 'Sign In'}
         </Button>
 

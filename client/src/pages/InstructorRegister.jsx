@@ -196,7 +196,7 @@ export default function InstructorRegister() {
           </label>
         </div>
 
-        <Button type="submit" variant="primary" disabled={loading || success}>
+        <Button type="submit" variant="primary" fullWidth disabled={loading || success}>
           {loading ? 'Creating Account...' : success ? 'Registration Complete!' : 'Create Account'}
         </Button>
 

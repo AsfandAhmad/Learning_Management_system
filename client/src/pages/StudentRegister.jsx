@@ -109,7 +109,7 @@ export default function StudentRegister() {
           </label>
         </div>
 
-        <Button type="submit" variant="primary" disabled={loading}>
+        <Button type="submit" variant="primary" fullWidth disabled={loading}>
           {loading ? 'Creating Account...' : 'Create Account'}
         </Button>
 
