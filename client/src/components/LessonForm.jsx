@@ -13,7 +13,7 @@
  */
 
 import React, { useState } from 'react';
-import axios from 'axios';
+import api from '../api/http';
 import './LessonForm.css';
 
 export function LessonForm({ sectionId, courseId, onSuccess, onCancel }) {
@@ -72,8 +72,8 @@ export function LessonForm({ sectionId, courseId, onSuccess, onCancel }) {
       console.log('  Section ID:', sectionId);
       console.log('  Lesson Details:', lessonDetails);
 
-      const response = await axios.post(
-        `/api/sections/${sectionId}/lessons`,
+      const response = await api.post(
+        `/sections/${sectionId}/lessons`,
         lessonDetails,
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -138,8 +138,8 @@ export function LessonForm({ sectionId, courseId, onSuccess, onCancel }) {
       const formData = new FormData();
       formData.append('video', videoFile);
 
-      await axios.post(
-        `/api/sections/${sectionId}/lessons/${currentLessonId}/videos/upload`,
+      await api.post(
+        `/sections/${sectionId}/lessons/${currentLessonId}/videos/upload`,
         formData,
         {
           headers: {
@@ -229,8 +229,8 @@ export function LessonForm({ sectionId, courseId, onSuccess, onCancel }) {
 
         console.log(`  Uploading ${i + 1}/${documents.length}: ${doc.name}`);
 
-        await axios.post(
-          `/api/sections/${sectionId}/lessons/${currentLessonId}/documents/upload`,
+        await api.post(
+          `/sections/${sectionId}/lessons/${currentLessonId}/documents/upload`,
           formData,
           {
             headers: {

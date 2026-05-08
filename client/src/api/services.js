@@ -53,6 +53,15 @@ export const quizzesAPI = {
   submitQuiz: (quizId, answers) => axios.post(`/quizzes/${quizId}/submit`, { answers }),
 };
 
+// ============ ASSIGNMENTS API ============
+export const assignmentsAPI = {
+  getCourseAssignments: (courseId) => axios.get(`/courses/${courseId}/assignments`),
+  createAssignment: (courseId, data) => axios.post(`/courses/${courseId}/assignments`, data),
+  updateAssignment: (assignmentId, data) => axios.put(`/assignments/${assignmentId}`, data),
+  deleteAssignment: (assignmentId) => axios.delete(`/assignments/${assignmentId}`),
+  submitAssignment: (assignmentId, data) => axios.post(`/assignments/${assignmentId}/submit`, data),
+};
+
 // ============ ENROLLMENTS API ============
 export const enrollmentsAPI = {
   // Server route expects POST /enrollments/courses/:courseId

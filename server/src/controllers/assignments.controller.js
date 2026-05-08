@@ -72,7 +72,16 @@ export async function getStudentAssignments(req, res, next) {
 export async function createAssignment(req, res, next) {
     try {
         const { courseId } = req.params;
-        const { Title, Description, DueDate, MaxMarks, SectionID, SubmissionType, AllowLateSubmission, MaxAttempts } = req.body;
+        const {
+            Title,
+            Description,
+            DueDate,
+            MaxMarks,
+            SectionID,
+            SubmissionType,
+            AllowLateSubmission,
+            MaxAttempts
+        } = req.body;
         const teacherId = req.user.teacherId;
 
         // Verify course belongs to teacher
@@ -85,8 +94,18 @@ export async function createAssignment(req, res, next) {
         }
 
         const [result] = await pool.query(
-            "INSERT INTO Assignment (CourseID, Title, Description, DueDate, MaxMarks) VALUES (?, ?, ?, ?, ?)",
-            [courseId, Title, Description, DueDate, MaxMarks]
+            "INSERT INTO Assignment (CourseID, SectionID, Title, Description, DueDate, MaxMarks, SubmissionType, AllowLateSubmission, MaxAttempts) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            [
+                courseId,
+                SectionID || null,
+                Title,
+                Description,
+                DueDate,
+                MaxMarks,
+                SubmissionType || 'FileUpload',
+                AllowLateSubmission ?? true,
+                MaxAttempts || 1
+            ]
         );
         res.status(201).json({ 
             assignmentId: result.insertId,
@@ -100,7 +119,15 @@ export async function createAssignment(req, res, next) {
 export async function updateAssignment(req, res, next) {
     try {
         const { assignmentId } = req.params;
-        const { Title, Description, DueDate, MaxMarks } = req.body;
+        const {
+            Title,
+            Description,
+            DueDate,
+            MaxMarks,
+            SubmissionType,
+            AllowLateSubmission,
+            MaxAttempts
+        } = req.body;
         const teacherId = req.user.teacherId;
 
         // Verify assignment belongs to teacher's course
@@ -113,8 +140,8 @@ export async function updateAssignment(req, res, next) {
         }
 
         await pool.query(
-            "UPDATE Assignment SET Title = ?, Description = ?, DueDate = ?, MaxMarks = ? WHERE AssignmentID = ?",
-            [Title, Description, DueDate, MaxMarks, assignmentId]
+            "UPDATE Assignment SET Title = ?, Description = ?, DueDate = ?, MaxMarks = ?, SubmissionType = ?, AllowLateSubmission = ?, MaxAttempts = ? WHERE AssignmentID = ?",
+            [Title, Description, DueDate, MaxMarks, SubmissionType, AllowLateSubmission, MaxAttempts, assignmentId]
         );
         res.json({ ok: true, message: "Assignment updated successfully" });
     } catch (e) { next(e); }

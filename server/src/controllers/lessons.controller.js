@@ -131,9 +131,20 @@ export async function createLesson(req, res, next) {
         console.log('  Lesson URL:', lessonURL || '(will be set on video upload)');
 
         const [result] = await pool.query(
-            `INSERT INTO Lesson (SectionID, Title, ContentType, ContentURL, PositionOrder) 
-             VALUES (?, ?, ?, ?, ?)`,
-            [sectionId, title, contentType, lessonURL, positionOrder]
+            `INSERT INTO Lesson
+             (SectionID, Title, ContentType, ContentURL, VideoURL, VideoDuration, Notes, LessonType, PositionOrder)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [
+                sectionId,
+                title,
+                contentType,
+                lessonURL,
+                videoURL,
+                videoDuration,
+                notes,
+                lessonType,
+                positionOrder
+            ]
         );
 
         console.log('✅ Lesson created successfully. ID:', result.insertId);
@@ -178,9 +189,10 @@ export async function updateLesson(req, res, next) {
         const lessonURL = contentURL || videoURL;
 
         await pool.query(
-            `UPDATE Lesson SET Title = COALESCE(?, Title), ContentType = COALESCE(?, ContentType), ContentURL = COALESCE(?, ContentURL), 
-                             PositionOrder = COALESCE(?, PositionOrder) WHERE LessonID = ?`,
-            [title, contentType, lessonURL, positionOrder, lessonId]
+            `UPDATE Lesson SET Title = COALESCE(?, Title), ContentType = COALESCE(?, ContentType), ContentURL = COALESCE(?, ContentURL),
+                             VideoURL = COALESCE(?, VideoURL), VideoDuration = COALESCE(?, VideoDuration), Notes = COALESCE(?, Notes),
+                             LessonType = COALESCE(?, LessonType), PositionOrder = COALESCE(?, PositionOrder) WHERE LessonID = ?`,
+            [title, contentType, lessonURL, videoURL, videoDuration, notes, lessonType, positionOrder, lessonId]
         );
         res.json({ ok: true, message: "Lesson updated successfully" });
     } catch (e) { next(e); }

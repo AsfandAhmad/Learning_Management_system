@@ -42,12 +42,26 @@ export async function getQuizById(req, res, next) {
 export async function createQuiz(req, res, next) {
     try {
         const { courseId } = req.params;
-        const { Title, title, TotalMarks, totalMarks, TimeLimit, timeLimit } = req.body;
+        const {
+            Title,
+            title,
+            Description,
+            description,
+            TotalMarks,
+            totalMarks,
+            TimeLimit,
+            timeLimit,
+            PassingMarks,
+            passingMarks,
+            passingScore
+        } = req.body;
         const teacherId = req.user.teacherId;
 
         const quizTitle = Title || title;
+        const quizDescription = Description || description || null;
         const quizMarks = TotalMarks || totalMarks || 100;
         const quizTimeLimit = TimeLimit || timeLimit || 30;
+        const quizPassingMarks = PassingMarks || passingMarks || passingScore || null;
 
         // Verify course belongs to teacher
         const [course] = await pool.query(
@@ -59,8 +73,8 @@ export async function createQuiz(req, res, next) {
         }
 
         const [result] = await pool.query(
-            "INSERT INTO Quiz (CourseID, Title, TotalMarks, TimeLimit) VALUES (?, ?, ?, ?)",
-            [courseId, quizTitle, quizMarks, quizTimeLimit]
+            "INSERT INTO Quiz (CourseID, Title, Description, TotalMarks, TimeLimit, PassingMarks) VALUES (?, ?, ?, ?, ?, ?)",
+            [courseId, quizTitle, quizDescription, quizMarks, quizTimeLimit, quizPassingMarks]
         );
         res.status(201).json({
             quizId: result.insertId,
@@ -74,8 +88,9 @@ export async function createQuiz(req, res, next) {
 export async function updateQuiz(req, res, next) {
     try {
         const { quizId } = req.params;
-        const { Title, Description, TotalMarks, PassingMarks } = req.body;
+        const { Title, Description, TotalMarks, PassingMarks, passingScore, passingMarks } = req.body;
         const teacherId = req.user.teacherId;
+        const normalizedPassingMarks = PassingMarks || passingMarks || passingScore || null;
 
         // Verify quiz belongs to teacher's course
         const [quiz] = await pool.query(
@@ -88,7 +103,7 @@ export async function updateQuiz(req, res, next) {
 
         await pool.query(
             "UPDATE Quiz SET Title = ?, Description = ?, TotalMarks = ?, PassingMarks = ? WHERE QuizID = ?",
-            [Title, Description, TotalMarks, PassingMarks, quizId]
+            [Title, Description, TotalMarks, normalizedPassingMarks, quizId]
         );
         res.json({ ok: true, message: "Quiz updated successfully" });
     } catch (e) { next(e); }

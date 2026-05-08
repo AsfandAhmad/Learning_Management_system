@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { coursesAPI, lessonsAPI, quizzesAPI } from '../api/services';
+import { coursesAPI, lessonsAPI, quizzesAPI, assignmentsAPI } from '../api/services';
 import Card, { CardHeader, CardTitle, CardContent } from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import Badge from '../components/ui/Badge';
@@ -16,6 +16,10 @@ export default function TeacherDashboard() {
   const [showSectionModal, setShowSectionModal] = useState(false);
   const [showLessonModal, setShowLessonModal] = useState(false);
   const [showQuizModal, setShowQuizModal] = useState(false);
+  const [showAssignmentModal, setShowAssignmentModal] = useState(false);
+  const [editingQuiz, setEditingQuiz] = useState(null);
+  const [editingAssignment, setEditingAssignment] = useState(null);
+  const [assessmentsRefreshKey, setAssessmentsRefreshKey] = useState(0);
   const [selectedCourse, setSelectedCourse] = useState(null);
   const [selectedSection, setSelectedSection] = useState(null);
   const [expandedCourse, setExpandedCourse] = useState(null);
@@ -71,7 +75,30 @@ export default function TeacherDashboard() {
 
   const handleAddQuiz = (course) => {
     setSelectedCourse(course);
+    setEditingQuiz(null);
     setShowQuizModal(true);
+  };
+
+  const handleAddAssignment = (course) => {
+    setSelectedCourse(course);
+    setEditingAssignment(null);
+    setShowAssignmentModal(true);
+  };
+
+  const handleEditQuiz = (course, quiz) => {
+    setSelectedCourse(course);
+    setEditingQuiz(quiz);
+    setShowQuizModal(true);
+  };
+
+  const handleEditAssignment = (course, assignment) => {
+    setSelectedCourse(course);
+    setEditingAssignment(assignment);
+    setShowAssignmentModal(true);
+  };
+
+  const handleAssessmentsUpdated = () => {
+    setAssessmentsRefreshKey((prev) => prev + 1);
   };
 
   const handleAddSection = (course) => {
@@ -264,6 +291,22 @@ export default function TeacherDashboard() {
                         </Button>
                       )}
                       <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleAddQuiz(course)}
+                        className="bg-white text-[#6b00b3] hover:bg-white/90"
+                      >
+                        + Quiz
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleAddAssignment(course)}
+                        className="bg-white text-[#6b00b3] hover:bg-white/90"
+                      >
+                        + Assignment
+                      </Button>
+                      <Button
                         variant="primary"
                         size="sm"
                         onClick={() => handleAddSection(course)}
@@ -297,7 +340,18 @@ export default function TeacherDashboard() {
                   </button>
 
                   {expandedCourse === course.CourseID && (
-                    <CourseHierarchy course={course} onAddLesson={handleAddLesson} />
+                    <div className="space-y-4">
+                      <CourseHierarchy course={course} onAddLesson={handleAddLesson} />
+                      <CourseAssessments
+                        course={course}
+                        refreshKey={assessmentsRefreshKey}
+                        onAddQuiz={handleAddQuiz}
+                        onAddAssignment={handleAddAssignment}
+                        onEditQuiz={handleEditQuiz}
+                        onEditAssignment={handleEditAssignment}
+                        onAssessmentsUpdated={handleAssessmentsUpdated}
+                      />
+                    </div>
                   )}
                 </CardContent>
               </Card>
@@ -330,8 +384,24 @@ export default function TeacherDashboard() {
 
       <QuizModal
         isOpen={showQuizModal}
-        onClose={() => setShowQuizModal(false)}
+        onClose={() => {
+          setShowQuizModal(false);
+          setEditingQuiz(null);
+        }}
         course={selectedCourse}
+        quiz={editingQuiz}
+        onSuccess={handleAssessmentsUpdated}
+      />
+
+      <AssignmentModal
+        isOpen={showAssignmentModal}
+        onClose={() => {
+          setShowAssignmentModal(false);
+          setEditingAssignment(null);
+        }}
+        course={selectedCourse}
+        assignment={editingAssignment}
+        onSuccess={handleAssessmentsUpdated}
       />
     </div>
   );
@@ -463,6 +533,149 @@ function CourseHierarchy({ course, onAddLesson }) {
           )}
         </div>
       ))}
+    </div>
+  );
+}
+
+function CourseAssessments({
+  course,
+  refreshKey,
+  onAddQuiz,
+  onAddAssignment,
+  onEditQuiz,
+  onEditAssignment,
+  onAssessmentsUpdated
+}) {
+  const [quizzes, setQuizzes] = useState([]);
+  const [assignments, setAssignments] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!course?.CourseID) return;
+
+    const fetchAssessments = async () => {
+      try {
+        const [quizResponse, assignmentResponse] = await Promise.all([
+          quizzesAPI.getCourseQuizzes(course.CourseID),
+          assignmentsAPI.getCourseAssignments(course.CourseID)
+        ]);
+
+        const quizData = Array.isArray(quizResponse.data)
+          ? quizResponse.data
+          : (quizResponse.data.quizzes || quizResponse.data || []);
+        const assignmentData = Array.isArray(assignmentResponse.data)
+          ? assignmentResponse.data
+          : (assignmentResponse.data.assignments || assignmentResponse.data || []);
+
+        setQuizzes(quizData);
+        setAssignments(assignmentData);
+      } catch (error) {
+        console.error('Error fetching assessments:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAssessments();
+  }, [course, refreshKey]);
+
+  const handleDeleteQuiz = async (quizId) => {
+    if (!quizId) return;
+    if (!window.confirm('Delete this quiz?')) return;
+
+    try {
+      await quizzesAPI.deleteQuiz(quizId);
+      onAssessmentsUpdated();
+    } catch (error) {
+      console.error('Error deleting quiz:', error);
+      alert(error.response?.data?.message || 'Failed to delete quiz');
+    }
+  };
+
+  const handleDeleteAssignment = async (assignmentId) => {
+    if (!assignmentId) return;
+    if (!window.confirm('Delete this assignment?')) return;
+
+    try {
+      await assignmentsAPI.deleteAssignment(assignmentId);
+      onAssessmentsUpdated();
+    } catch (error) {
+      console.error('Error deleting assignment:', error);
+      alert(error.response?.data?.message || 'Failed to delete assignment');
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex justify-center py-4">
+        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div className="border border-gray-200 rounded-lg bg-white p-4">
+        <div className="flex items-center justify-between mb-3">
+          <h4 className="font-semibold text-text-dark">Quizzes</h4>
+          <Button variant="outline" size="sm" onClick={() => onAddQuiz(course)}>
+            + Add Quiz
+          </Button>
+        </div>
+        {quizzes.length === 0 ? (
+          <p className="text-sm text-text-muted">No quizzes yet.</p>
+        ) : (
+          <div className="space-y-2">
+            {quizzes.map((quiz) => (
+              <div key={quiz.QuizID} className="flex items-center justify-between text-sm">
+                <div className="flex flex-col">
+                  <span className="font-medium text-gray-900">{quiz.Title || 'Untitled Quiz'}</span>
+                  <span className="text-gray-500">{quiz.PassingMarks ?? 'N/A'}% pass</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button variant="outline" size="sm" onClick={() => onEditQuiz(course, quiz)}>
+                    Edit
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={() => handleDeleteQuiz(quiz.QuizID)}>
+                    Delete
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div className="border border-gray-200 rounded-lg bg-white p-4">
+        <div className="flex items-center justify-between mb-3">
+          <h4 className="font-semibold text-text-dark">Assignments</h4>
+          <Button variant="outline" size="sm" onClick={() => onAddAssignment(course)}>
+            + Add Assignment
+          </Button>
+        </div>
+        {assignments.length === 0 ? (
+          <p className="text-sm text-text-muted">No assignments yet.</p>
+        ) : (
+          <div className="space-y-2">
+            {assignments.map((assignment) => (
+              <div key={assignment.AssignmentID} className="flex items-center justify-between text-sm">
+                <div className="flex flex-col">
+                  <span className="font-medium text-gray-900">{assignment.Title || 'Untitled Assignment'}</span>
+                  <span className="text-gray-500">{assignment.DueDate || 'No due date'}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button variant="outline" size="sm" onClick={() => onEditAssignment(course, assignment)}>
+                    Edit
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={() => handleDeleteAssignment(assignment.AssignmentID)}>
+                    Delete
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -815,7 +1028,7 @@ function LessonModal({ isOpen, onClose, course, section }) {
 }
 
 // Quiz Creation Modal
-function QuizModal({ isOpen, onClose, course }) {
+function QuizModal({ isOpen, onClose, course, quiz, onSuccess }) {
   const [formData, setFormData] = useState({
     title: '',
     passingScore: 70
@@ -823,14 +1036,34 @@ function QuizModal({ isOpen, onClose, course }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+  useEffect(() => {
+    if (!isOpen) return;
+    if (quiz) {
+      setFormData({
+        title: quiz.Title || '',
+        passingScore: quiz.PassingMarks ?? 70
+      });
+    } else {
+      setFormData({ title: '', passingScore: 70 });
+    }
+  }, [isOpen, quiz]);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setLoading(true);
 
     try {
-      await quizzesAPI.createQuiz(course?.CourseID, formData);
+      if (quiz?.QuizID) {
+        await quizzesAPI.updateQuiz(quiz.QuizID, {
+          Title: formData.title,
+          PassingMarks: Number(formData.passingScore)
+        });
+      } else {
+        await quizzesAPI.createQuiz(course?.CourseID, formData);
+      }
       setFormData({ title: '', passingScore: 70 });
+      onSuccess?.();
       onClose();
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to create quiz');
@@ -840,7 +1073,7 @@ function QuizModal({ isOpen, onClose, course }) {
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Create Quiz">
+    <Modal isOpen={isOpen} onClose={onClose} title={quiz ? 'Edit Quiz' : 'Create Quiz'}>
       <form onSubmit={handleSubmit}>
         {error && (
           <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
@@ -873,6 +1106,207 @@ function QuizModal({ isOpen, onClose, course }) {
           </Button>
           <Button type="submit" variant="primary" fullWidth disabled={loading}>
             {loading ? 'Creating...' : 'Create Quiz'}
+          </Button>
+        </div>
+      </form>
+    </Modal>
+  );
+}
+
+// Assignment Creation Modal
+function AssignmentModal({ isOpen, onClose, course, assignment, onSuccess }) {
+  const [formData, setFormData] = useState({
+    title: '',
+    description: '',
+    dueDate: '',
+    maxMarks: 100,
+    sectionId: '',
+    submissionType: 'FileUpload',
+    allowLateSubmission: true,
+    maxAttempts: 1
+  });
+  const [sections, setSections] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (!isOpen) return;
+    if (assignment) {
+      setFormData({
+        title: assignment.Title || '',
+        description: assignment.Description || '',
+        dueDate: assignment.DueDate || '',
+        maxMarks: assignment.MaxMarks ?? 100,
+        sectionId: assignment.SectionID ? String(assignment.SectionID) : '',
+        submissionType: assignment.SubmissionType || 'FileUpload',
+        allowLateSubmission: assignment.AllowLateSubmission ?? true,
+        maxAttempts: assignment.MaxAttempts ?? 1
+      });
+    } else {
+      setFormData({
+        title: '',
+        description: '',
+        dueDate: '',
+        maxMarks: 100,
+        sectionId: '',
+        submissionType: 'FileUpload',
+        allowLateSubmission: true,
+        maxAttempts: 1
+      });
+    }
+  }, [isOpen, assignment]);
+
+  useEffect(() => {
+    if (!isOpen || !course?.CourseID) return;
+
+    const fetchSections = async () => {
+      try {
+        const response = await coursesAPI.getSections(course.CourseID);
+        const data = Array.isArray(response.data)
+          ? response.data
+          : (response.data.sections || response.data || []);
+        setSections(data);
+      } catch (err) {
+        console.error('Error fetching sections:', err);
+      }
+    };
+
+    fetchSections();
+  }, [isOpen, course]);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+
+    try {
+      const payload = {
+        Title: formData.title,
+        Description: formData.description,
+        DueDate: formData.dueDate || null,
+        MaxMarks: Number(formData.maxMarks) || 0,
+        SectionID: formData.sectionId || null,
+        SubmissionType: formData.submissionType,
+        AllowLateSubmission: !!formData.allowLateSubmission,
+        MaxAttempts: Number(formData.maxAttempts) || 1
+      };
+
+      if (assignment?.AssignmentID) {
+        await assignmentsAPI.updateAssignment(assignment.AssignmentID, payload);
+      } else {
+        await assignmentsAPI.createAssignment(course?.CourseID, payload);
+      }
+
+      setFormData({
+        title: '',
+        description: '',
+        dueDate: '',
+        maxMarks: 100,
+        sectionId: '',
+        submissionType: 'FileUpload',
+        allowLateSubmission: true,
+        maxAttempts: 1
+      });
+      onSuccess?.();
+      onClose();
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to create assignment');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <Modal isOpen={isOpen} onClose={onClose} title={assignment ? 'Edit Assignment' : 'Create Assignment'}>
+      <form onSubmit={handleSubmit}>
+        {error && (
+          <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
+            {error}
+          </div>
+        )}
+
+        <Input
+          label="Assignment Title"
+          value={formData.title}
+          onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+          required
+          placeholder="e.g., Build a Landing Page"
+        />
+
+        <Textarea
+          label="Description"
+          value={formData.description}
+          onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+          placeholder="Assignment instructions and requirements..."
+          rows={3}
+        />
+
+        <Select
+          label="Section (optional)"
+          value={formData.sectionId}
+          onChange={(e) => setFormData({ ...formData, sectionId: e.target.value })}
+          options={[
+            { value: '', label: 'No specific section' },
+            ...sections.map((section) => ({
+              value: String(section.SectionID),
+              label: section.Title || `Section ${section.SectionID}`
+            }))
+          ]}
+        />
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Input
+            label="Due Date"
+            type="date"
+            value={formData.dueDate}
+            onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
+          />
+
+          <Input
+            label="Max Marks"
+            type="number"
+            value={formData.maxMarks}
+            onChange={(e) => setFormData({ ...formData, maxMarks: e.target.value })}
+            min="0"
+          />
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Select
+            label="Submission Type"
+            value={formData.submissionType}
+            onChange={(e) => setFormData({ ...formData, submissionType: e.target.value })}
+            options={[
+              { value: 'FileUpload', label: 'File Upload' },
+              { value: 'Text', label: 'Text' },
+              { value: 'Link', label: 'Link' }
+            ]}
+          />
+
+          <Input
+            label="Max Attempts"
+            type="number"
+            value={formData.maxAttempts}
+            onChange={(e) => setFormData({ ...formData, maxAttempts: e.target.value })}
+            min="1"
+          />
+        </div>
+
+        <label className="flex items-center gap-2 text-sm text-text-dark mt-2">
+          <input
+            type="checkbox"
+            checked={formData.allowLateSubmission}
+            onChange={(e) => setFormData({ ...formData, allowLateSubmission: e.target.checked })}
+          />
+          Allow late submission
+        </label>
+
+        <div className="flex gap-3 mt-6">
+          <Button type="button" variant="outline" fullWidth onClick={onClose}>
+            Cancel
+          </Button>
+          <Button type="submit" variant="primary" fullWidth disabled={loading}>
+            {loading ? 'Creating...' : 'Create Assignment'}
           </Button>
         </div>
       </form>
