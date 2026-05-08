@@ -219,6 +219,10 @@ export async function updateLesson(req, res, next) {
         const { lessonId } = req.params;
         // Support multiple casings
         const title = req.body.Title || req.body.title || null;
+        // Log incoming update request for debugging
+        console.log('PUT /lessons/:lessonId request params:', req.params);
+        console.log('PUT /lessons/:lessonId request body:', req.body);
+
         const contentType = normalizeContentType(req.body.ContentType || req.body.contentType, {
             contentURL: req.body.ContentURL || req.body.contentURL || req.body.videoURL || null,
             notes: req.body.Notes || req.body.notes || null
@@ -228,6 +232,8 @@ export async function updateLesson(req, res, next) {
         const videoDuration = req.body.VideoDuration || req.body.videoDuration || req.body.duration || null;
         const notes = req.body.Notes || req.body.notes || null;
         const lessonType = normalizeLessonType(req.body.LessonType || req.body.lessonType);
+
+        console.log('Normalized values prior to DB update:', { title, contentType, lessonType, notes, videoURL: req.body.VideoURL || req.body.videoURL });
         const positionOrder = req.body.PositionOrder || req.body.positionOrder || null;
         const teacherId = req.user.teacherId;
 
