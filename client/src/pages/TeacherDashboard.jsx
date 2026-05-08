@@ -953,13 +953,17 @@ function LessonModal({ isOpen, onClose, course, section, lesson }) {
       }
 
       // Prepare lesson data
+      const lessonNotes = [formData.notes, formData.content]
+        .filter((value) => value && String(value).trim())
+        .join('\n\n');
+
       const payload = {
         Title: formData.title || 'Untitled Lesson',
         ContentType: formData.lessonType || 'Video',
-        ContentURL: formData.content || formData.videoURL || null,
+        ContentURL: formData.videoURL || null,
         VideoURL: formData.videoURL || null,
         VideoDuration: formData.duration ? parseInt(formData.duration) : 0,
-        Notes: formData.notes || null,
+        Notes: lessonNotes || null,
         LessonType: formData.lessonType || 'Video'
       };
 
