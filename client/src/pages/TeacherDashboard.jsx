@@ -1250,6 +1250,9 @@ function AssignmentModal({ isOpen, onClose, course, assignment, onSuccess }) {
   const [error, setError] = useState('');
   const [assignmentFiles, setAssignmentFiles] = useState([]);
 
+  // Helper to format ISO date to yyyy-MM-dd for date inputs
+  const toDateInput = (iso) => iso ? iso.split('T')[0] : '';
+
   useEffect(() => {
     if (!isOpen) {
       setAssignmentFiles([]);
@@ -1259,7 +1262,7 @@ function AssignmentModal({ isOpen, onClose, course, assignment, onSuccess }) {
       setFormData({
         title: assignment.Title || '',
         description: assignment.Description || '',
-        dueDate: assignment.DueDate || '',
+        dueDate: toDateInput(assignment.DueDate) || '',
         maxMarks: assignment.MaxMarks ?? 100,
         sectionId: assignment.SectionID ? String(assignment.SectionID) : '',
         submissionType: assignment.SubmissionType || 'FileUpload',
