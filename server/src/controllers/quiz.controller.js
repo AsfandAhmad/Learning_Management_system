@@ -5,15 +5,15 @@ export async function getQuizzes(req, res, next) {
     try {
         const { courseId } = req.params;
 
-        const [quizzes] = await pool.query(
-            `SELECT q.*, 
-              (SELECT COUNT(*) FROM Question WHERE QuizID = q.QuizID) AS QuestionCount,
-              (SELECT COUNT(*) FROM QuizAttempt WHERE QuizID = q.QuizID) AS AttemptCount
-       FROM Quiz q 
-       WHERE q.CourseID = ? 
-       ORDER BY q.CreatedAt DESC`,
-            [courseId]
-        );
+                const [quizzes] = await pool.query(
+                        `SELECT q.*,
+                            (SELECT COUNT(*) FROM QuizQuestions qq WHERE qq.QuizID = q.QuizID) AS QuestionCount,
+                            (SELECT COUNT(*) FROM QuizAttempt WHERE QuizID = q.QuizID) AS AttemptCount
+             FROM Quiz q
+             WHERE q.CourseID = ?
+             ORDER BY q.CreatedAt DESC`,
+                        [courseId]
+                );
         res.json(quizzes);
     } catch (e) { next(e); }
 }
@@ -30,7 +30,11 @@ export async function getQuizById(req, res, next) {
         if (!quiz.length) return res.status(404).json({ message: "Quiz not found" });
 
         const [questions] = await pool.query(
-            "SELECT * FROM Question WHERE QuizID = ? ORDER BY QuestionID",
+            `SELECT q.*
+             FROM Question q
+             JOIN QuizQuestions qq ON qq.QuestionID = q.QuestionID
+             WHERE qq.QuizID = ?
+             ORDER BY q.QuestionID`,
             [quizId]
         );
 
@@ -172,7 +176,10 @@ export async function submitQuizAttempt(req, res, next) {
 
         // Get questions
         const [questions] = await pool.query(
-            "SELECT * FROM Question WHERE QuizID = ?",
+            `SELECT q.*
+             FROM Question q
+             JOIN QuizQuestions qq ON qq.QuestionID = q.QuestionID
+             WHERE qq.QuizID = ?`,
             [quizId]
         );
 
@@ -186,7 +193,7 @@ export async function submitQuizAttempt(req, res, next) {
 
         // Insert attempt
         const [result] = await pool.query(
-            "INSERT INTO QuizAttempt (QuizID, StudentID, Score, AttemptDate) VALUES (?, ?, ?, NOW())",
+            "INSERT INTO QuizAttempt (QuizID, StudentID, Score) VALUES (?, ?, ?)",
             [quizId, studentId, score]
         );
 

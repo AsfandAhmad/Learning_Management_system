@@ -3,15 +3,25 @@ import { pool } from "../config/db.js";
 // GET all lessons in a section with progress
 export async function getLessons(req, res, next) {
     try {
-        const { sectionId } = req.params;
+        const { sectionId, courseId } = req.params;
         const studentId = req.user?.studentId;
 
-        // Verify section exists
-        const [section] = await pool.query("SELECT SectionID FROM Section WHERE SectionID = ?", [sectionId]);
-        if (!section.length) return res.status(404).json({ message: "Section not found" });
+        let query = "SELECT LessonID, Title, ContentType, ContentURL, PositionOrder FROM Lesson";
+        const params = [];
 
-        let query = "SELECT LessonID, Title, ContentType, ContentURL, PositionOrder FROM Lesson WHERE SectionID = ? ORDER BY PositionOrder";
-        const params = [sectionId];
+        if (sectionId) {
+            // Verify section exists
+            const [section] = await pool.query("SELECT SectionID FROM Section WHERE SectionID = ?", [sectionId]);
+            if (!section.length) return res.status(404).json({ message: "Section not found" });
+
+            query += " WHERE SectionID = ? ORDER BY PositionOrder";
+            params.push(sectionId);
+        } else if (courseId) {
+            query += " WHERE SectionID IN (SELECT SectionID FROM Section WHERE CourseID = ?) ORDER BY PositionOrder";
+            params.push(courseId);
+        } else {
+            return res.status(400).json({ message: "Section ID or Course ID is required" });
+        }
 
         const [lessons] = await pool.query(query, params);
 
