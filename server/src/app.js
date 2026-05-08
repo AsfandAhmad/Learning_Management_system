@@ -104,6 +104,7 @@ app.use("/api/sections/:sectionId/lessons", lessonsRoutes);
 app.use("/api/courses/:courseId/lessons", lessonsRoutes);
 app.use("/api/courses/:courseId/lectures", lessonsRoutes);
 app.use("/api/courses/:courseId/assignments", assignmentsRoutes);
+app.use("/api/assignments", assignmentsRoutes);
 app.use("/api/courses/:courseId/quizzes", quizRoutes);
 app.use("/api/quizzes", quizRoutes);
 
