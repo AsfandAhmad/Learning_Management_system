@@ -48,6 +48,7 @@ export const modulesAPI = {
 // ============ QUIZZES API ============
 export const quizzesAPI = {
   getCourseQuizzes: (courseId) => axios.get(`/courses/${courseId}/quizzes`),
+  getQuizById: (quizId) => axios.get(`/quizzes/${quizId}`),
   createQuiz: (courseId, data) => axios.post(`/courses/${courseId}/quizzes`, data),
   updateQuiz: (quizId, data) => axios.put(`/quizzes/${quizId}`, data),
   deleteQuiz: (quizId) => axios.delete(`/quizzes/${quizId}`),
