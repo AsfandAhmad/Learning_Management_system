@@ -14,6 +14,7 @@ import TeacherDashboard from './pages/TeacherDashboard.jsx';
 import AdminDashboard from './pages/AdminDashboard.jsx';
 import CourseDetail from './pages/CourseDetail.jsx';
 import StudentQuizAttempt from './pages/StudentQuizAttempt.jsx';
+import StudentAssignmentSubmission from './pages/StudentAssignmentSubmission.jsx';
 
 function App() {
   return (
@@ -48,6 +49,14 @@ function App() {
             element={
               <ProtectedRoute allowedRoles={['student']}>
                 <StudentQuizAttempt />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/student/course/:courseId/assignment/:assignmentId" 
+            element={
+              <ProtectedRoute allowedRoles={['student']}>
+                <StudentAssignmentSubmission />
               </ProtectedRoute>
             } 
           />

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { coursesAPI, lessonsAPI, quizzesAPI } from '../api/services';
+import { coursesAPI, lessonsAPI, quizzesAPI, assignmentsAPI } from '../api/services';
 import Card, { CardHeader, CardTitle, CardContent } from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import Badge from '../components/ui/Badge';
@@ -12,6 +12,7 @@ export default function CourseDetail() {
   const [course, setCourse] = useState(null);
   const [lessons, setLessons] = useState([]);
   const [quizzes, setQuizzes] = useState([]);
+  const [assignments, setAssignments] = useState([]);
   const [loading, setLoading] = useState(true);
   const { logout } = useAuth();
   const navigate = useNavigate();
@@ -22,14 +23,16 @@ export default function CourseDetail() {
 
   const fetchCourseData = async () => {
     try {
-      const [courseRes, lessonsRes, quizzesRes] = await Promise.all([
+      const [courseRes, lessonsRes, quizzesRes, assignmentsRes] = await Promise.all([
         coursesAPI.getCourseById(courseId),
         lessonsAPI.getCourseLessons(courseId),
-        quizzesAPI.getCourseQuizzes(courseId)
+        quizzesAPI.getCourseQuizzes(courseId),
+        assignmentsAPI.getCourseAssignments(courseId)
       ]);
       setCourse(courseRes.data.course || courseRes.data);
       setLessons(lessonsRes.data.lessons || lessonsRes.data || []);
       setQuizzes(quizzesRes.data.quizzes || quizzesRes.data || []);
+      setAssignments(assignmentsRes.data.assignments || assignmentsRes.data || []);
     } catch (error) {
       console.error('Error fetching course data:', error);
     } finally {
@@ -64,6 +67,10 @@ export default function CourseDetail() {
     {
       label: `Quizzes (${quizzes.length})`,
       content: <QuizzesTab quizzes={quizzes} />
+    },
+    {
+      label: `Assignments (${assignments.length})`,
+      content: <AssignmentsTab assignments={assignments} />
     },
     {
       label: 'About',
@@ -214,6 +221,73 @@ function QuizzesTab({ quizzes }) {
           </CardContent>
         </Card>
       ))}
+    </div>
+  );
+}
+
+function AssignmentsTab({ assignments }) {
+  const { courseId } = useParams();
+  const navigate = useNavigate();
+
+  if (assignments.length === 0) {
+    return (
+      <div className="text-center py-12">
+        <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+        </svg>
+        <h3 className="mt-2 text-sm font-medium text-text-dark">No assignments yet</h3>
+        <p className="mt-1 text-sm text-text-muted">Assignments will be added soon.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      {assignments.map((assignment, index) => {
+        const isOverdue = assignment.DueDate && new Date(assignment.DueDate) < new Date();
+        const daysLeft = assignment.DueDate 
+          ? Math.ceil((new Date(assignment.DueDate) - new Date()) / (1000 * 60 * 60 * 24))
+          : null;
+
+        return (
+          <Card key={assignment.AssignmentID || index} hover>
+            <CardHeader>
+              <CardTitle className="flex items-start justify-between">
+                <span>{assignment.Title || `Assignment ${index + 1}`}</span>
+                {assignment.MaxMarks && (
+                  <Badge variant="secondary">{assignment.MaxMarks} Marks</Badge>
+                )}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3 mb-4">
+                {assignment.Description && (
+                  <p className="text-sm text-text-muted line-clamp-2">{assignment.Description}</p>
+                )}
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-text-muted">
+                    {assignment.SubmissionType || 'File Upload'}
+                  </span>
+                  {isOverdue ? (
+                    <Badge variant="danger">Overdue</Badge>
+                  ) : daysLeft !== null && daysLeft <= 3 ? (
+                    <Badge variant="warning">{daysLeft} days left</Badge>
+                  ) : daysLeft !== null ? (
+                    <Badge variant="success">{daysLeft} days left</Badge>
+                  ) : null}
+                </div>
+              </div>
+              <Button 
+                variant="primary" 
+                fullWidth
+                onClick={() => navigate(`/student/course/${courseId}/assignment/${assignment.AssignmentID}`)}
+              >
+                Submit Assignment
+              </Button>
+            </CardContent>
+          </Card>
+        );
+      })}
     </div>
   );
 }
