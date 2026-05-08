@@ -72,10 +72,22 @@ export async function createQuiz(req, res, next) {
             return res.status(403).json({ message: "Unauthorized" });
         }
 
-        const [result] = await pool.query(
-            "INSERT INTO Quiz (CourseID, Title, Description, TotalMarks, TimeLimit, PassingMarks) VALUES (?, ?, ?, ?, ?, ?)",
-            [courseId, quizTitle, quizDescription, quizMarks, quizTimeLimit, quizPassingMarks]
-        );
+        let result;
+        try {
+            [result] = await pool.query(
+                "INSERT INTO Quiz (CourseID, Title, Description, TotalMarks, TimeLimit, PassingMarks) VALUES (?, ?, ?, ?, ?, ?)",
+                [courseId, quizTitle, quizDescription, quizMarks, quizTimeLimit, quizPassingMarks]
+            );
+        } catch (err) {
+            if (err && err.code === 'ER_BAD_FIELD_ERROR') {
+                [result] = await pool.query(
+                    "INSERT INTO Quiz (CourseID, Title, TotalMarks, TimeLimit) VALUES (?, ?, ?, ?)",
+                    [courseId, quizTitle, quizMarks, quizTimeLimit]
+                );
+            } else {
+                throw err;
+            }
+        }
         res.status(201).json({
             quizId: result.insertId,
             QuizID: result.insertId,
@@ -101,10 +113,21 @@ export async function updateQuiz(req, res, next) {
             return res.status(403).json({ message: "Unauthorized" });
         }
 
-        await pool.query(
-            "UPDATE Quiz SET Title = ?, Description = ?, TotalMarks = ?, PassingMarks = ? WHERE QuizID = ?",
-            [Title, Description, TotalMarks, normalizedPassingMarks, quizId]
-        );
+        try {
+            await pool.query(
+                "UPDATE Quiz SET Title = ?, Description = ?, TotalMarks = ?, PassingMarks = ? WHERE QuizID = ?",
+                [Title, Description, TotalMarks, normalizedPassingMarks, quizId]
+            );
+        } catch (err) {
+            if (err && err.code === 'ER_BAD_FIELD_ERROR') {
+                await pool.query(
+                    "UPDATE Quiz SET Title = ?, TotalMarks = ? WHERE QuizID = ?",
+                    [Title, TotalMarks, quizId]
+                );
+            } else {
+                throw err;
+            }
+        }
         res.json({ ok: true, message: "Quiz updated successfully" });
     } catch (e) { next(e); }
 }
