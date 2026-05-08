@@ -28,7 +28,7 @@ export async function getSections(req, res, next) {
         const sectionsWithLessons = await Promise.all(
             sections.map(async (section) => {
                 const [lessons] = await pool.query(
-                    "SELECT LessonID, Title, ContentType, PositionOrder FROM Lesson WHERE SectionID = ? ORDER BY PositionOrder",
+                    "SELECT LessonID, SectionID, Title, ContentType, ContentURL, Notes AS Content, VideoURL, VideoDuration, LessonType, PositionOrder FROM Lesson WHERE SectionID = ? ORDER BY PositionOrder",
                     [section.SectionID]
                 );
                 return { ...section, lessons };

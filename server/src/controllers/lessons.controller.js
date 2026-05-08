@@ -6,7 +6,7 @@ export async function getLessons(req, res, next) {
         const { sectionId, courseId } = req.params;
         const studentId = req.user?.studentId;
 
-        let query = "SELECT LessonID, Title, ContentType, ContentURL, PositionOrder FROM Lesson";
+        let query = "SELECT LessonID, SectionID, Title, ContentType, ContentURL, Notes AS Content, VideoURL, VideoDuration, LessonType, PositionOrder FROM Lesson";
         const params = [];
 
         if (sectionId) {
@@ -47,7 +47,10 @@ export async function getLessonById(req, res, next) {
         const studentId = req.user?.studentId;
 
         const [lesson] = await pool.query(
-            `SELECT LessonID, Title, ContentType, ContentURL, CreatedAt FROM Lesson WHERE LessonID = ?`,
+            `SELECT l.LessonID, l.SectionID, s.Title AS SectionTitle, l.Title, l.ContentType, l.ContentURL, l.Notes AS Content, l.VideoURL, l.VideoDuration, l.LessonType, l.PositionOrder, l.CreatedAt
+             FROM Lesson l
+             LEFT JOIN Section s ON l.SectionID = s.SectionID
+             WHERE l.LessonID = ?`,
             [lessonId]
         );
         if (!lesson.length) return res.status(404).json({ message: "Lesson not found" });
