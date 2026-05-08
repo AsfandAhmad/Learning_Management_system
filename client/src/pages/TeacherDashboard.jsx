@@ -966,10 +966,16 @@ function LessonModal({ isOpen, onClose, course, section, lesson }) {
       const sectionId = section?.SectionID;
       if (lesson && lesson.LessonID) {
         // Update existing lesson
+        console.log('📝 Updating lesson:');
+        console.log('   Lesson ID:', lesson.LessonID);
+        console.log('   Payload:', payload);
         await lessonsAPI.updateLesson(lesson.LessonID, payload);
         console.log('✅ Lesson updated successfully:', lesson.LessonID);
       } else {
         // Create new lesson
+        console.log('📝 Creating new lesson:');
+        console.log('   Section ID:', sectionId);
+        console.log('   Payload:', payload);
         const response = await lessonsAPI.createLesson(sectionId, payload);
         console.log('✅ Lesson created successfully:', response.data);
       }
@@ -979,6 +985,10 @@ function LessonModal({ isOpen, onClose, course, section, lesson }) {
       onClose();
     } catch (err) {
       console.error('❌ Lesson creation error:', err);
+      console.error('   Status:', err.response?.status);
+      console.error('   URL:', err.response?.config?.url);
+      console.error('   Message:', err.response?.data?.message || err.message);
+      console.error('   Full response:', err.response?.data);
       setError(err.response?.data?.message || err.message || 'Failed to create lesson');
     } finally {
       setLoading(false);

@@ -88,6 +88,11 @@ export async function createLesson(req, res, next) {
     try {
         const { sectionId } = req.params;
 
+        console.log('🎓 [POST /lessons] Creating lesson');
+        console.log('   Section ID from params:', sectionId);
+        console.log('   User:', req.user ? `${req.user.teacherId}` : 'anonymous');
+        console.log('   Body:', req.body);
+
         // Validate sectionId exists
         if (!sectionId) {
             console.error('❌ sectionId is missing from params');
