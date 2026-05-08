@@ -13,6 +13,7 @@ import StudentDashboard from './pages/StudentDashboard.jsx';
 import TeacherDashboard from './pages/TeacherDashboard.jsx';
 import AdminDashboard from './pages/AdminDashboard.jsx';
 import CourseDetail from './pages/CourseDetail.jsx';
+import StudentQuizAttempt from './pages/StudentQuizAttempt.jsx';
 
 function App() {
   return (
@@ -39,6 +40,14 @@ function App() {
             element={
               <ProtectedRoute allowedRoles={['student']}>
                 <CourseDetail />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/student/course/:courseId/quiz/:quizId" 
+            element={
+              <ProtectedRoute allowedRoles={['student']}>
+                <StudentQuizAttempt />
               </ProtectedRoute>
             } 
           />

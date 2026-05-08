@@ -168,6 +168,9 @@ function LessonsTab({ lessons }) {
 }
 
 function QuizzesTab({ quizzes }) {
+  const { courseId } = useParams();
+  const navigate = useNavigate();
+
   if (quizzes.length === 0) {
     return (
       <div className="text-center py-12">
@@ -188,11 +191,24 @@ function QuizzesTab({ quizzes }) {
             <CardTitle>{quiz.Title || `Quiz ${index + 1}`}</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="flex items-center justify-between mb-4">
-              <span className="text-sm text-text-muted">10 Questions</span>
-              <Badge variant="info">Not Attempted</Badge>
+            <div className="space-y-3 mb-4">
+              {quiz.Description && (
+                <p className="text-sm text-text-muted">{quiz.Description}</p>
+              )}
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-text-muted">
+                  {quiz.QuestionCount || quiz.questionsCount || 0} Questions
+                </span>
+                {quiz.PassingMarks && (
+                  <Badge variant="info">Pass: {quiz.PassingMarks}%</Badge>
+                )}
+              </div>
             </div>
-            <Button variant="primary" fullWidth>
+            <Button 
+              variant="primary" 
+              fullWidth
+              onClick={() => navigate(`/student/course/${courseId}/quiz/${quiz.QuizID}`)}
+            >
               Start Quiz
             </Button>
           </CardContent>
