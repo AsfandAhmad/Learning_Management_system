@@ -967,9 +967,10 @@ function LessonModal({ isOpen, onClose, course, section, lesson }) {
       if (lesson && lesson.LessonID) {
         // Update existing lesson
         console.log('📝 Updating lesson:');
+        console.log('   Section ID:', sectionId);
         console.log('   Lesson ID:', lesson.LessonID);
         console.log('   Payload:', payload);
-        await lessonsAPI.updateLesson(lesson.LessonID, payload);
+        await lessonsAPI.updateLesson(sectionId, lesson.LessonID, payload);
         console.log('✅ Lesson updated successfully:', lesson.LessonID);
       } else {
         // Create new lesson

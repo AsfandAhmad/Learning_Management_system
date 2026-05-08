@@ -33,8 +33,8 @@ export const lessonsAPI = {
   getLessonById: (courseId, lessonId) => axios.get(`/courses/${courseId}/lessons/${lessonId}`),
   // Create lesson under a specific section (server route: /sections/:sectionId/lessons)
   createLesson: (sectionId, data) => axios.post(`/sections/${sectionId}/lessons`, data),
-  updateLesson: (lessonId, data) => axios.put(`/lessons/${lessonId}`, data),
-  deleteLesson: (lessonId) => axios.delete(`/lessons/${lessonId}`),
+  updateLesson: (sectionId, lessonId, data) => axios.put(`/sections/${sectionId}/lessons/${lessonId}`, data),
+  deleteLesson: (sectionId, lessonId) => axios.delete(`/sections/${sectionId}/lessons/${lessonId}`),
 };
 
 // ============ MODULES API ============
