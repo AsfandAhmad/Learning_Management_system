@@ -8,6 +8,7 @@ import Modal from '../components/ui/Modal';
 import Input from '../components/ui/Input';
 import Textarea from '../components/ui/Textarea';
 import Select from '../components/ui/Select';
+import QuestionManager from '../components/QuestionManager';
 
 export default function TeacherDashboard() {
   const [courses, setCourses] = useState([]);
@@ -1035,16 +1036,26 @@ function QuizModal({ isOpen, onClose, course, quiz, onSuccess }) {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [quizCreated, setQuizCreated] = useState(false);
+  const [currentQuizId, setCurrentQuizId] = useState(null);
 
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen) {
+      setQuizCreated(false);
+      setCurrentQuizId(null);
+      return;
+    }
     if (quiz) {
       setFormData({
         title: quiz.Title || '',
         passingScore: quiz.PassingMarks ?? 70
       });
+      setQuizCreated(true);
+      setCurrentQuizId(quiz.QuizID);
     } else {
       setFormData({ title: '', passingScore: 70 });
+      setQuizCreated(false);
+      setCurrentQuizId(null);
     }
   }, [isOpen, quiz]);
 
@@ -1054,17 +1065,29 @@ function QuizModal({ isOpen, onClose, course, quiz, onSuccess }) {
     setLoading(true);
 
     try {
+      let quizId;
       if (quiz?.QuizID) {
         await quizzesAPI.updateQuiz(quiz.QuizID, {
           Title: formData.title,
           PassingMarks: Number(formData.passingScore)
         });
+        quizId = quiz.QuizID;
       } else {
-        await quizzesAPI.createQuiz(course?.CourseID, formData);
+        const response = await quizzesAPI.createQuiz(course?.CourseID, formData);
+        quizId = response.data.QuizID || response.data.id;
       }
-      setFormData({ title: '', passingScore: 70 });
-      onSuccess?.();
-      onClose();
+      
+      setCurrentQuizId(quizId);
+      setQuizCreated(true);
+      
+      // Show success message temporarily
+      if (!quiz) {
+        // Only auto-close if creating new; if editing, keep open for question management
+        setTimeout(() => {
+          onSuccess?.();
+          onClose();
+        }, 1500);
+      }
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to create quiz');
     } finally {
@@ -1072,8 +1095,15 @@ function QuizModal({ isOpen, onClose, course, quiz, onSuccess }) {
     }
   };
 
+  const handleClose = () => {
+    setFormData({ title: '', passingScore: 70 });
+    setQuizCreated(false);
+    setCurrentQuizId(null);
+    onClose();
+  };
+
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title={quiz ? 'Edit Quiz' : 'Create Quiz'}>
+    <Modal isOpen={isOpen} onClose={handleClose} title={quiz ? 'Edit Quiz' : 'Create Quiz'} size="lg">
       <form onSubmit={handleSubmit}>
         {error && (
           <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
@@ -1101,14 +1131,23 @@ function QuizModal({ isOpen, onClose, course, quiz, onSuccess }) {
         />
 
         <div className="flex gap-3 mt-6">
-          <Button type="button" variant="outline" fullWidth onClick={onClose}>
+          <Button type="button" variant="outline" fullWidth onClick={handleClose}>
             Cancel
           </Button>
           <Button type="submit" variant="primary" fullWidth disabled={loading}>
-            {loading ? 'Creating...' : 'Create Quiz'}
+            {loading ? 'Creating...' : quizCreated ? 'Update Quiz' : 'Create & Manage Questions'}
           </Button>
         </div>
       </form>
+
+      {/* Question Manager - Show after quiz is created */}
+      {quizCreated && currentQuizId && course?.CourseID && (
+        <QuestionManager 
+          courseId={course.CourseID} 
+          quizId={currentQuizId}
+          isOpen={true}
+        />
+      )}
     </Modal>
   );
 }

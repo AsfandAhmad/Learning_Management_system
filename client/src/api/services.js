@@ -62,6 +62,24 @@ export const assignmentsAPI = {
   submitAssignment: (assignmentId, data) => axios.post(`/assignments/${assignmentId}/submit`, data),
 };
 
+// ============ QUESTIONS API ============
+export const questionsAPI = {
+  // Get questions for a quiz
+  getQuizQuestions: (courseId, quizId) => axios.get(`/courses/${courseId}/quizzes/${quizId}/questions`),
+  
+  // Create a new question for a quiz
+  createQuestion: (courseId, quizId, data) => axios.post(`/courses/${courseId}/quizzes/${quizId}/questions`, data),
+  
+  // Update a question
+  updateQuestion: (courseId, questionId, data) => axios.put(`/courses/${courseId}/questions/${questionId}`, data),
+  
+  // Delete a question
+  deleteQuestion: (courseId, questionId) => axios.delete(`/courses/${courseId}/questions/${questionId}`),
+  
+  // Get questions with answer key (teacher view)
+  getQuestionsWithAnswerKey: (courseId, quizId) => axios.get(`/courses/${courseId}/quizzes/${quizId}/questions/answer-key`),
+};
+
 // ============ ENROLLMENTS API ============
 export const enrollmentsAPI = {
   // Server route expects POST /enrollments/courses/:courseId
