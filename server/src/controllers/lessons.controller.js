@@ -1,5 +1,30 @@
 import { pool } from "../config/db.js";
 
+const normalizeContentType = (value, { contentURL = null, notes = null } = {}) => {
+    const raw = String(value || '').trim().toLowerCase();
+
+    if (raw === 'pdf' || raw === 'document' || raw === 'documents') return 'PDF';
+    if (raw === 'video' || raw === 'lecture') return 'Video';
+    if (raw === 'text' || raw === 'reading' || raw === 'interactive' || raw === 'assignment') return 'Text';
+
+    if (contentURL) return 'Video';
+    if (notes) return 'Text';
+
+    return 'Text';
+};
+
+const normalizeLessonType = (value) => {
+    const raw = String(value || '').trim().toLowerCase();
+
+    if (raw === 'video' || raw === 'lecture') return 'Video';
+    if (raw === 'text' || raw === 'reading') return 'Reading';
+    if (raw === 'interactive') return 'Interactive';
+    if (raw === 'mixed') return 'Mixed';
+    if (raw === 'assignment' || raw === 'project' || raw === 'quiz' || raw === 'practical') return 'Mixed';
+
+    return 'Mixed';
+};
+
 // GET all lessons in a section with progress
 export async function getLessons(req, res, next) {
     try {
@@ -107,12 +132,15 @@ export async function createLesson(req, res, next) {
 
         // Accept both Title/title and different casings from client
         const title = req.body.Title || req.body.title || null;
-        const contentType = req.body.ContentType || req.body.contentType || req.body.content || null;
+        const contentType = normalizeContentType(req.body.ContentType || req.body.contentType || req.body.content, {
+            contentURL: req.body.ContentURL || req.body.contentURL || req.body.videoURL || null,
+            notes: req.body.Notes || req.body.notes || null
+        });
         const contentURL = req.body.ContentURL || req.body.contentURL || req.body.contentURL || null;
         const videoURL = req.body.VideoURL || req.body.videoURL || null;
         const videoDuration = req.body.VideoDuration || req.body.videoDuration || req.body.duration || null;
         const notes = req.body.Notes || req.body.notes || null;
-        const lessonType = req.body.LessonType || req.body.lessonType || 'Mixed';
+        const lessonType = normalizeLessonType(req.body.LessonType || req.body.lessonType);
         let positionOrder = req.body.PositionOrder || req.body.positionOrder || null;
         const teacherId = req.user?.teacherId;
 
@@ -191,12 +219,15 @@ export async function updateLesson(req, res, next) {
         const { lessonId } = req.params;
         // Support multiple casings
         const title = req.body.Title || req.body.title || null;
-        const contentType = req.body.ContentType || req.body.contentType || null;
+        const contentType = normalizeContentType(req.body.ContentType || req.body.contentType, {
+            contentURL: req.body.ContentURL || req.body.contentURL || req.body.videoURL || null,
+            notes: req.body.Notes || req.body.notes || null
+        });
         const contentURL = req.body.ContentURL || req.body.contentURL || null;
         const videoURL = req.body.VideoURL || req.body.videoURL || null;
         const videoDuration = req.body.VideoDuration || req.body.videoDuration || req.body.duration || null;
         const notes = req.body.Notes || req.body.notes || null;
-        const lessonType = req.body.LessonType || req.body.lessonType || null;
+        const lessonType = normalizeLessonType(req.body.LessonType || req.body.lessonType);
         const positionOrder = req.body.PositionOrder || req.body.positionOrder || null;
         const teacherId = req.user.teacherId;
 
