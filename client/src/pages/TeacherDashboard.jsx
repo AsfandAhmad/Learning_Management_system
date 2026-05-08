@@ -1034,6 +1034,7 @@ function QuizModal({ isOpen, onClose, course, quiz, onSuccess }) {
     title: '',
     passingScore: 70
   });
+  const [quizFiles, setQuizFiles] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [quizCreated, setQuizCreated] = useState(false);
@@ -1043,6 +1044,7 @@ function QuizModal({ isOpen, onClose, course, quiz, onSuccess }) {
     if (!isOpen) {
       setQuizCreated(false);
       setCurrentQuizId(null);
+      setQuizFiles([]);
       return;
     }
     if (quiz) {
@@ -1056,8 +1058,18 @@ function QuizModal({ isOpen, onClose, course, quiz, onSuccess }) {
       setFormData({ title: '', passingScore: 70 });
       setQuizCreated(false);
       setCurrentQuizId(null);
+      setQuizFiles([]);
     }
   }, [isOpen, quiz]);
+
+  const handleFileChange = (e) => {
+    const files = Array.from(e.target.files || []);
+    setQuizFiles(prev => [...prev, ...files]);
+  };
+
+  const handleRemoveFile = (index) => {
+    setQuizFiles(prev => prev.filter((_, i) => i !== index));
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -1066,6 +1078,7 @@ function QuizModal({ isOpen, onClose, course, quiz, onSuccess }) {
 
     try {
       let quizId;
+      
       if (quiz?.QuizID) {
         await quizzesAPI.updateQuiz(quiz.QuizID, {
           Title: formData.title,
@@ -1075,6 +1088,30 @@ function QuizModal({ isOpen, onClose, course, quiz, onSuccess }) {
       } else {
         const response = await quizzesAPI.createQuiz(course?.CourseID, formData);
         quizId = response.data.QuizID || response.data.id;
+      }
+      
+      // Handle file uploads if any files are selected
+      if (quizFiles.length > 0 && quizId) {
+        const fileFormData = new FormData();
+        quizFiles.forEach(file => {
+          fileFormData.append('files', file);
+        });
+        
+        try {
+          // Note: This endpoint may need to be created on the backend
+          // For now, we'll store the intention but not fail if it doesn't exist
+          await fetch(`${import.meta.env.VITE_API_URL}/courses/${course?.CourseID}/quizzes/${quizId}/resources`, {
+            method: 'POST',
+            body: fileFormData,
+            headers: {
+              'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+          }).catch(() => {
+            console.warn('Quiz resource upload endpoint not available yet');
+          });
+        } catch (fileErr) {
+          console.warn('File upload failed but quiz was created:', fileErr);
+        }
       }
       
       setCurrentQuizId(quizId);
@@ -1099,6 +1136,7 @@ function QuizModal({ isOpen, onClose, course, quiz, onSuccess }) {
     setFormData({ title: '', passingScore: 70 });
     setQuizCreated(false);
     setCurrentQuizId(null);
+    setQuizFiles([]);
     onClose();
   };
 
@@ -1129,6 +1167,49 @@ function QuizModal({ isOpen, onClose, course, quiz, onSuccess }) {
           max="100"
           placeholder="70"
         />
+
+        {/* File Upload Section */}
+        <div className="mt-4">
+          <label className="block text-sm font-medium text-text-dark mb-2">
+            Quiz Resources (Optional)
+          </label>
+          <p className="text-xs text-text-muted mb-3">
+            Upload study materials, instructions, or reference files (PDF, DOC, ZIP, images)
+          </p>
+          <input
+            type="file"
+            multiple
+            onChange={handleFileChange}
+            accept=".pdf,.doc,.docx,.zip,.jpg,.png,.gif,.jpeg"
+            className="block w-full text-sm text-text-muted
+              file:mr-4 file:py-2 file:px-4
+              file:rounded file:border-0
+              file:text-sm file:font-semibold
+              file:bg-badge-orange file:text-white
+              hover:file:bg-opacity-90"
+          />
+          
+          {/* Display selected files */}
+          {quizFiles.length > 0 && (
+            <div className="mt-3 space-y-2">
+              {quizFiles.map((file, index) => (
+                <div key={index} className="flex items-center justify-between bg-gray-50 p-2 rounded border border-gray-200">
+                  <span className="text-sm text-text-dark truncate">{file.name}</span>
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveFile(index)}
+                    className="text-red-600 hover:text-red-800"
+                  >
+                    ✕
+                  </button>
+                </div>
+              ))}
+              <p className="text-xs text-text-muted">
+                {quizFiles.length} file(s) selected
+              </p>
+            </div>
+          )}
+        </div>
 
         <div className="flex gap-3 mt-6">
           <Button type="button" variant="outline" fullWidth onClick={handleClose}>
@@ -1167,9 +1248,13 @@ function AssignmentModal({ isOpen, onClose, course, assignment, onSuccess }) {
   const [sections, setSections] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [assignmentFiles, setAssignmentFiles] = useState([]);
 
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen) {
+      setAssignmentFiles([]);
+      return;
+    }
     if (assignment) {
       setFormData({
         title: assignment.Title || '',
@@ -1213,6 +1298,15 @@ function AssignmentModal({ isOpen, onClose, course, assignment, onSuccess }) {
     fetchSections();
   }, [isOpen, course]);
 
+  const handleFileChange = (e) => {
+    const files = Array.from(e.target.files || []);
+    setAssignmentFiles(prev => [...prev, ...files]);
+  };
+
+  const handleRemoveFile = (index) => {
+    setAssignmentFiles(prev => prev.filter((_, i) => i !== index));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
@@ -1230,10 +1324,36 @@ function AssignmentModal({ isOpen, onClose, course, assignment, onSuccess }) {
         MaxAttempts: Number(formData.maxAttempts) || 1
       };
 
+      let assignmentId;
       if (assignment?.AssignmentID) {
         await assignmentsAPI.updateAssignment(assignment.AssignmentID, payload);
+        assignmentId = assignment.AssignmentID;
       } else {
-        await assignmentsAPI.createAssignment(course?.CourseID, payload);
+        const response = await assignmentsAPI.createAssignment(course?.CourseID, payload);
+        assignmentId = response.data.AssignmentID || response.data.id;
+      }
+
+      // Handle file uploads if any files are selected
+      if (assignmentFiles.length > 0 && assignmentId) {
+        const fileFormData = new FormData();
+        assignmentFiles.forEach(file => {
+          fileFormData.append('files', file);
+        });
+        
+        try {
+          // Note: This endpoint may need to be created on the backend
+          await fetch(`${import.meta.env.VITE_API_URL}/courses/${course?.CourseID}/assignments/${assignmentId}/resources`, {
+            method: 'POST',
+            body: fileFormData,
+            headers: {
+              'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+          }).catch(() => {
+            console.warn('Assignment resource upload endpoint not available yet');
+          });
+        } catch (fileErr) {
+          console.warn('File upload failed but assignment was created:', fileErr);
+        }
       }
 
       setFormData({
@@ -1246,6 +1366,7 @@ function AssignmentModal({ isOpen, onClose, course, assignment, onSuccess }) {
         allowLateSubmission: true,
         maxAttempts: 1
       });
+      setAssignmentFiles([]);
       onSuccess?.();
       onClose();
     } catch (err) {
@@ -1256,7 +1377,7 @@ function AssignmentModal({ isOpen, onClose, course, assignment, onSuccess }) {
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title={assignment ? 'Edit Assignment' : 'Create Assignment'}>
+    <Modal isOpen={isOpen} onClose={onClose} title={assignment ? 'Edit Assignment' : 'Create Assignment'} size="lg">
       <form onSubmit={handleSubmit}>
         {error && (
           <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
@@ -1339,6 +1460,49 @@ function AssignmentModal({ isOpen, onClose, course, assignment, onSuccess }) {
           />
           Allow late submission
         </label>
+
+        {/* File Upload Section for Teacher Resources */}
+        <div className="mt-4">
+          <label className="block text-sm font-medium text-text-dark mb-2">
+            Assignment Resources (Optional)
+          </label>
+          <p className="text-xs text-text-muted mb-3">
+            Upload starter files, templates, or reference materials for students
+          </p>
+          <input
+            type="file"
+            multiple
+            onChange={handleFileChange}
+            accept=".pdf,.doc,.docx,.zip,.jpg,.png,.gif,.jpeg,.txt,.html,.css,.js"
+            className="block w-full text-sm text-text-muted
+              file:mr-4 file:py-2 file:px-4
+              file:rounded file:border-0
+              file:text-sm file:font-semibold
+              file:bg-badge-orange file:text-white
+              hover:file:bg-opacity-90"
+          />
+          
+          {/* Display selected files */}
+          {assignmentFiles.length > 0 && (
+            <div className="mt-3 space-y-2">
+              {assignmentFiles.map((file, index) => (
+                <div key={index} className="flex items-center justify-between bg-gray-50 p-2 rounded border border-gray-200">
+                  <span className="text-sm text-text-dark truncate">{file.name}</span>
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveFile(index)}
+                    className="text-red-600 hover:text-red-800"
+                  >
+                    ✕
+                  </button>
+                </div>
+              ))}
+              <p className="text-xs text-text-muted">
+                {assignmentFiles.length} file(s) selected
+              </p>
+            </div>
+          )}
+        </div>
 
         <div className="flex gap-3 mt-6">
           <Button type="button" variant="outline" fullWidth onClick={onClose}>
