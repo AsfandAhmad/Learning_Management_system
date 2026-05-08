@@ -27,4 +27,10 @@ router.delete("/:quizId", isAuth, isInstructor, deleteQuiz);
 router.post("/:quizId/submit", isAuth, isStudent, submitQuizAttempt);
 router.get("/:quizId/attempts", isAuth, isStudent, getStudentQuizAttempts);
 
+// Resource uploads (optional)
+router.post("/:quizId/resources", isAuth, isInstructor, (req, res) => {
+  // Placeholder for resource upload - not implemented yet
+  res.status(501).json({ message: "Resource upload not implemented yet" });
+});
+
 export default router;

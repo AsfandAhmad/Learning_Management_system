@@ -361,3 +361,50 @@ export async function toggleStudentStatus(req, res, next) {
     next(e);
   }
 }
+
+// Get admin statistics
+export async function getStatistics(req, res, next) {
+  try {
+    // Get counts
+    const [teacherStats] = await pool.query(
+      "SELECT Status, COUNT(*) as count FROM Teacher GROUP BY Status"
+    );
+
+    const [studentStats] = await pool.query(
+      "SELECT Status, COUNT(*) as count FROM Student GROUP BY Status"
+    );
+
+    const [courseStats] = await pool.query(
+      "SELECT Status, COUNT(*) as count FROM Course GROUP BY Status"
+    );
+
+    const [enrollmentStats] = await pool.query(
+      "SELECT COUNT(*) as total FROM Enrollment"
+    );
+
+    // Format response
+    const stats = {
+      teachers: {
+        total: teacherStats.reduce((sum, s) => sum + s.count, 0),
+        pending: teacherStats.find(s => s.Status === 'Pending')?.count || 0,
+        approved: teacherStats.find(s => s.Status === 'Approved')?.count || 0,
+        rejected: teacherStats.find(s => s.Status === 'Rejected')?.count || 0
+      },
+      students: {
+        total: studentStats.reduce((sum, s) => sum + s.count, 0),
+        active: studentStats.find(s => s.Status === 'Active')?.count || 0,
+        blocked: studentStats.find(s => s.Status === 'Blocked')?.count || 0
+      },
+      courses: {
+        total: courseStats.reduce((sum, s) => sum + s.count, 0),
+        draft: courseStats.find(s => s.Status === 'Draft')?.count || 0,
+        published: courseStats.find(s => s.Status === 'Published')?.count || 0
+      },
+      enrollments: enrollmentStats[0].total
+    };
+
+    res.json(stats);
+  } catch (e) {
+    next(e);
+  }
+}

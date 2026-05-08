@@ -23,6 +23,7 @@ router.post("/courses/:courseId", isAuth, isStudent, enrollStudent);
 router.post("/", isAuth, isStudent, enrollStudentFromBody); // Accept courseId in body
 router.delete("/:enrollmentId", isAuth, isStudent, unenrollStudent);
 router.get("/:enrollmentId/progress", isAuth, isStudent, getStudentProgress);
+router.put("/:enrollmentId/progress", isAuth, isStudent, updateEnrollment);
 
 // Teacher routes
 router.get("/courses/:courseId/students", isAuth, isInstructor, getCourseEnrollments);

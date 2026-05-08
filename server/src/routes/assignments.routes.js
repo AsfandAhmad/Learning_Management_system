@@ -35,4 +35,10 @@ router.delete("/:assignmentId", isAuth, isInstructor, deleteAssignment);
 // Student submission
 router.post("/:assignmentId/submit", isAuth, isStudent, submitAssignment);
 
+// Resource uploads (optional)
+router.post("/:assignmentId/resources", isAuth, isInstructor, (req, res) => {
+  // Placeholder for resource upload - not implemented yet
+  res.status(501).json({ message: "Resource upload not implemented yet" });
+});
+
 export default router;

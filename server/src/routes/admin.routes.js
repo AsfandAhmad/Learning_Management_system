@@ -9,7 +9,8 @@ import {
   getTeacherCV,
   getAllStudents,
   getStudentDetails,
-  toggleStudentStatus
+  toggleStudentStatus,
+  getStatistics
 } from "../controllers/admin.controller.js";
 import { isAuth, isAdmin } from "../middleware/auth.js";
 
@@ -33,5 +34,8 @@ router.get("/teachers/:teacherId/documents", getTeacherDocuments);
 router.get("/students", getAllStudents);
 router.get("/students/:studentId/details", getStudentDetails);
 router.patch("/students/:studentId/status", toggleStudentStatus);
+
+// Statistics
+router.get("/statistics", getStatistics);
 
 export default router;
