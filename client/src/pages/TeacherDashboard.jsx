@@ -417,7 +417,7 @@ export default function TeacherDashboard() {
 }
 
 // Course Hierarchy Component - Shows Sections and Lessons
-function CourseHierarchy({ course, onAddLesson }) {
+function CourseHierarchy({ course, onAddLesson, onEditLesson }) {
   const [sections, setSections] = useState([]);
   const [loading, setLoading] = useState(true);
   const [expandedSection, setExpandedSection] = useState(null);
