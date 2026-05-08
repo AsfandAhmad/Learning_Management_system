@@ -311,7 +311,6 @@ export default function TeacherDashboard() {
                         variant="primary"
                         size="sm"
                         onClick={() => handleAddSection(course)}
-                        className="bg-white text-[#6b00b3] hover:bg-white/90"
                       >
                         + Section
                       </Button>
@@ -420,10 +419,33 @@ function CourseHierarchy({ course, onAddLesson }) {
 
   const fetchSections = async () => {
     try {
-      const response = await coursesAPI.getSections(course.CourseID);
+      const [sectionsResponse, lessonsResponse] = await Promise.all([
+        coursesAPI.getSections(course.CourseID),
+        lessonsAPI.getCourseLessons(course.CourseID)
+      ]);
+
       // API returns array directly, handle both array and wrapped responses
-      const data = Array.isArray(response.data) ? response.data : (response.data.sections || response.data || []);
-      setSections(data);
+      const sectionsData = Array.isArray(sectionsResponse.data)
+        ? sectionsResponse.data
+        : (sectionsResponse.data.sections || sectionsResponse.data || []);
+      const lessonsData = Array.isArray(lessonsResponse.data)
+        ? lessonsResponse.data
+        : (lessonsResponse.data.lessons || lessonsResponse.data || []);
+
+      const lessonsBySection = lessonsData.reduce((acc, lesson) => {
+        const sectionId = lesson.SectionID;
+        if (!sectionId) return acc;
+        if (!acc[sectionId]) acc[sectionId] = [];
+        acc[sectionId].push(lesson);
+        return acc;
+      }, {});
+
+      const mergedSections = sectionsData.map((section) => ({
+        ...section,
+        lessons: lessonsBySection[section.SectionID] || []
+      }));
+
+      setSections(mergedSections);
     } catch (error) {
       console.error('Error fetching sections:', error);
     } finally {
@@ -602,7 +624,8 @@ function CourseAssessments({
       onAssessmentsUpdated();
     } catch (error) {
       console.error('Error deleting assignment:', error);
-      alert(error.response?.data?.message || 'Failed to delete assignment');
+      const message = error.response?.data?.message || 'Failed to delete assignment';
+      alert(message);
     }
   };
 

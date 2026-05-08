@@ -145,7 +145,8 @@ function LessonsTab({ lessons, courseId }) {
   return (
     <div className="space-y-4">
       {lessons.map((lesson, index) => {
-        const preview = lesson.Content || lesson.Notes || (lesson.ContentURL ? 'Lesson resource available' : 'No content available');
+        const hasResource = Boolean(lesson.ContentURL || lesson.VideoURL);
+        const preview = lesson.Content || lesson.Notes || (hasResource ? 'Lesson resource available' : 'No content available');
         return (
         <Card key={lesson.LessonID || index} hover>
           <div className="flex items-start gap-4">

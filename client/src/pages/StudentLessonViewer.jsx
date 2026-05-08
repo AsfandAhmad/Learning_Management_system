@@ -66,7 +66,7 @@ export default function StudentLessonViewer() {
   }
 
   const content = lesson.Content || lesson.Notes || '';
-  const contentUrl = lesson.ContentURL || '';
+  const contentUrl = lesson.ContentURL || lesson.VideoURL || '';
   const videoUrl = lesson.VideoURL || contentUrl;
   const embedUrl = videoUrl ? toEmbedUrl(videoUrl) : '';
   const hasVideo = !!videoUrl;
