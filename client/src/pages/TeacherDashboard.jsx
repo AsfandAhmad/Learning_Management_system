@@ -16,6 +16,7 @@ export default function TeacherDashboard() {
   const [showCourseModal, setShowCourseModal] = useState(false);
   const [showSectionModal, setShowSectionModal] = useState(false);
   const [showLessonModal, setShowLessonModal] = useState(false);
+  const [selectedLesson, setSelectedLesson] = useState(null);
   const [showQuizModal, setShowQuizModal] = useState(false);
   const [showAssignmentModal, setShowAssignmentModal] = useState(false);
   const [editingQuiz, setEditingQuiz] = useState(null);
@@ -71,6 +72,13 @@ export default function TeacherDashboard() {
     setSelectedCourse(course);
     setSelectedSection(section || null);
     console.log('✅ State updated - Section set to:', section?.SectionID || 'NULL');
+    setShowLessonModal(true);
+  };
+
+  const handleEditLesson = (course, section, lesson) => {
+    setSelectedCourse(course);
+    setSelectedSection(section || null);
+    setSelectedLesson(lesson || null);
     setShowLessonModal(true);
   };
 
@@ -341,7 +349,7 @@ export default function TeacherDashboard() {
 
                   {expandedCourse === course.CourseID && (
                     <div className="space-y-4">
-                      <CourseHierarchy course={course} onAddLesson={handleAddLesson} />
+                      <CourseHierarchy course={course} onAddLesson={handleAddLesson} onEditLesson={handleEditLesson} />
                       <CourseAssessments
                         course={course}
                         refreshKey={assessmentsRefreshKey}
@@ -376,10 +384,11 @@ export default function TeacherDashboard() {
       />
 
       <LessonModal
-            isOpen={showLessonModal}
-            onClose={() => setShowLessonModal(false)}
-            course={selectedCourse}
-            section={selectedSection}
+        isOpen={showLessonModal}
+        onClose={() => { setShowLessonModal(false); setSelectedLesson(null); }}
+        course={selectedCourse}
+        section={selectedSection}
+        lesson={selectedLesson}
           />
 
       <QuizModal
@@ -501,7 +510,7 @@ function CourseHierarchy({ course, onAddLesson }) {
 
                     {expandedSection === section.SectionID && (
             <div className="border-t bg-gray-50 p-3 space-y-2">
-                  {section.lessons && section.lessons.length > 0 ? (
+                    {section.lessons && section.lessons.length > 0 ? (
                 <>
                   {section.lessons.map((lesson, idx) => (
                     <div key={idx} className="bg-white p-3 rounded border border-gray-200 flex items-start justify-between">
@@ -525,7 +534,7 @@ function CourseHierarchy({ course, onAddLesson }) {
                           {lesson.Notes && <span className="text-green-600">• Has Notes</span>}
                         </div>
                       </div>
-                      <Button variant="outline" size="sm" className="ml-2">
+                      <Button variant="outline" size="sm" className="ml-2" onClick={() => onEditLesson(course, section, lesson)}>
                         Edit
                       </Button>
                     </div>
@@ -891,7 +900,7 @@ function SectionModal({ isOpen, onClose, course, onSuccess }) {
 }
 
 // Lesson Creation Modal
-function LessonModal({ isOpen, onClose, course, section }) {
+function LessonModal({ isOpen, onClose, course, section, lesson }) {
   const [formData, setFormData] = useState({
     title: '',
     content: '',
@@ -907,6 +916,22 @@ function LessonModal({ isOpen, onClose, course, section }) {
   useEffect(() => {
     console.log('📋 LessonModal - Section updated:', section);
   }, [section]);
+
+  // Populate form when editing an existing lesson
+  useEffect(() => {
+    if (lesson) {
+      setFormData({
+        title: lesson.Title || '',
+        content: lesson.Content || lesson.Notes || '',
+        duration: lesson.VideoDuration ? String(lesson.VideoDuration) : '',
+        videoURL: lesson.VideoURL || lesson.ContentURL || '',
+        notes: lesson.Notes || '',
+        lessonType: lesson.LessonType || 'Video'
+      });
+    } else {
+      setFormData({ title: '', content: '', duration: '', videoURL: '', notes: '', lessonType: 'Video' });
+    }
+  }, [lesson]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -928,24 +953,27 @@ function LessonModal({ isOpen, onClose, course, section }) {
       }
 
       // Prepare lesson data
-      const lessonsData = {
-        title: formData.title || 'Untitled Lesson',
-        contentType: formData.lessonType || 'Video',
-        videoURL: formData.videoURL,
-        videoDuration: formData.duration ? parseInt(formData.duration) : 0,
-        notes: formData.notes,
-        lessonType: formData.lessonType || 'Video'
+      const payload = {
+        Title: formData.title || 'Untitled Lesson',
+        ContentType: formData.lessonType || 'Video',
+        ContentURL: formData.content || formData.videoURL || null,
+        VideoURL: formData.videoURL || null,
+        VideoDuration: formData.duration ? parseInt(formData.duration) : 0,
+        Notes: formData.notes || null,
+        LessonType: formData.lessonType || 'Video'
       };
-      
-      const sectionId = section.SectionID;
-      console.log('✅ Creating lesson with:');
-      console.log('   Section ID:', sectionId);
-      console.log('   Lesson Title:', lessonsData.title);
-      console.log('   Lesson Type:', lessonsData.contentType);
 
-      const response = await lessonsAPI.createLesson(sectionId, lessonsData);
-      console.log('✅ Lesson created successfully:', response.data);
-      
+      const sectionId = section?.SectionID;
+      if (lesson && lesson.LessonID) {
+        // Update existing lesson
+        await lessonsAPI.updateLesson(lesson.LessonID, payload);
+        console.log('✅ Lesson updated successfully:', lesson.LessonID);
+      } else {
+        // Create new lesson
+        const response = await lessonsAPI.createLesson(sectionId, payload);
+        console.log('✅ Lesson created successfully:', response.data);
+      }
+
       // Reset form
       setFormData({ title: '', content: '', duration: '', videoURL: '', notes: '', lessonType: 'Video' });
       onClose();
