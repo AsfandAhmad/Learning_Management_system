@@ -6,7 +6,7 @@ export async function getLessons(req, res, next) {
         const { sectionId, courseId } = req.params;
         const studentId = req.user?.studentId;
 
-        let query = "SELECT LessonID, SectionID, Title, ContentType, ContentURL, Notes AS Content, VideoURL, VideoDuration, LessonType, PositionOrder FROM Lesson";
+        let query = "SELECT l.LessonID, l.SectionID, s.Title AS SectionTitle, l.Title, l.ContentType, l.ContentURL, l.Notes AS Content, l.VideoURL, l.VideoDuration, l.LessonType, l.PositionOrder FROM Lesson l LEFT JOIN Section s ON l.SectionID = s.SectionID";
         const params = [];
 
         if (sectionId) {
@@ -14,10 +14,10 @@ export async function getLessons(req, res, next) {
             const [section] = await pool.query("SELECT SectionID FROM Section WHERE SectionID = ?", [sectionId]);
             if (!section.length) return res.status(404).json({ message: "Section not found" });
 
-            query += " WHERE SectionID = ? ORDER BY PositionOrder";
+            query += " WHERE l.SectionID = ? ORDER BY l.PositionOrder";
             params.push(sectionId);
         } else if (courseId) {
-            query += " WHERE SectionID IN (SELECT SectionID FROM Section WHERE CourseID = ?) ORDER BY PositionOrder";
+            query += " WHERE l.SectionID IN (SELECT SectionID FROM Section WHERE CourseID = ?) ORDER BY l.PositionOrder";
             params.push(courseId);
         } else {
             return res.status(400).json({ message: "Section ID or Course ID is required" });
@@ -56,6 +56,12 @@ export async function getLessonById(req, res, next) {
         if (!lesson.length) return res.status(404).json({ message: "Lesson not found" });
 
         const lessonData = lesson[0];
+        console.log('Lesson lookup:', {
+            lessonId,
+            sectionId: lessonData.SectionID,
+            sectionTitle: lessonData.SectionTitle || null,
+            contentLength: lessonData.Content ? String(lessonData.Content).length : 0
+        });
 
         // Get progress if student is logged in
         if (studentId) {

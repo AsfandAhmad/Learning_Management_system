@@ -62,7 +62,7 @@ export default function CourseDetail() {
   const tabs = [
     {
       label: `Lessons (${lessons.length})`,
-      content: <LessonsTab lessons={lessons} />
+      content: <LessonsTab lessons={lessons} courseId={courseId} />
     },
     {
       label: `Quizzes (${quizzes.length})`,
@@ -127,7 +127,9 @@ export default function CourseDetail() {
   );
 }
 
-function LessonsTab({ lessons }) {
+function LessonsTab({ lessons, courseId }) {
+  const navigate = useNavigate();
+
   if (lessons.length === 0) {
     return (
       <div className="text-center py-12">
@@ -142,7 +144,9 @@ function LessonsTab({ lessons }) {
 
   return (
     <div className="space-y-4">
-      {lessons.map((lesson, index) => (
+      {lessons.map((lesson, index) => {
+        const preview = lesson.Content || lesson.Notes || (lesson.ContentURL ? 'Lesson resource available' : 'No content available');
+        return (
         <Card key={lesson.LessonID || index} hover>
           <div className="flex items-start gap-4">
             <div className="flex-shrink-0 w-10 h-10 bg-badge-blue/10 rounded-full flex items-center justify-center text-badge-blue font-semibold">
@@ -153,7 +157,7 @@ function LessonsTab({ lessons }) {
                 {lesson.Title || `Lesson ${index + 1}`}
               </h3>
               <p className="text-text-muted text-sm mb-3">
-                {lesson.Content || 'No content available'}
+                {preview}
               </p>
               <div className="flex items-center gap-4 text-sm text-text-muted">
                 <span className="flex items-center gap-1">
@@ -164,12 +168,20 @@ function LessonsTab({ lessons }) {
                 </span>
               </div>
             </div>
-            <Button variant="outline" size="sm">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                if (!lesson.LessonID) return;
+                navigate(`/student/course/${courseId}/lesson/${lesson.LessonID}`);
+              }}
+            >
               Start
             </Button>
           </div>
         </Card>
-      ))}
+        );
+      })}
     </div>
   );
 }

@@ -30,6 +30,7 @@ export const coursesAPI = {
 // ============ LESSONS API ============
 export const lessonsAPI = {
   getCourseLessons: (courseId) => axios.get(`/courses/${courseId}/lessons`),
+  getLessonById: (courseId, lessonId) => axios.get(`/courses/${courseId}/lessons/${lessonId}`),
   // Create lesson under a specific section (server route: /sections/:sectionId/lessons)
   createLesson: (sectionId, data) => axios.post(`/sections/${sectionId}/lessons`, data),
   updateLesson: (lessonId, data) => axios.put(`/lessons/${lessonId}`, data),

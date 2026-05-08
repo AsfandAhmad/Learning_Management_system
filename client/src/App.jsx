@@ -15,6 +15,7 @@ import AdminDashboard from './pages/AdminDashboard.jsx';
 import CourseDetail from './pages/CourseDetail.jsx';
 import StudentQuizAttempt from './pages/StudentQuizAttempt.jsx';
 import StudentAssignmentSubmission from './pages/StudentAssignmentSubmission.jsx';
+import StudentLessonViewer from './pages/StudentLessonViewer.jsx';
 
 function App() {
   return (
@@ -59,6 +60,14 @@ function App() {
                 <StudentAssignmentSubmission />
               </ProtectedRoute>
             } 
+          />
+          <Route
+            path="/student/course/:courseId/lesson/:lessonId"
+            element={
+              <ProtectedRoute allowedRoles={['student']}>
+                <StudentLessonViewer />
+              </ProtectedRoute>
+            }
           />
           
           {/* Protected Teacher Routes */}
