@@ -29,7 +29,10 @@ export async function getAssignmentById(req, res, next) {
             "SELECT * FROM Assignment WHERE AssignmentID = ?",
             [assignmentId]
         );
-        if (!assignment.length) return res.status(404).json({ message: "Assignment not found" });
+        if (!assignment.length) {
+            console.warn(`Assignment not found: assignmentId=${assignmentId}`);
+            return res.status(404).json({ message: "Assignment not found" });
+        }
 
         res.json(assignment[0]);
     } catch (e) { next(e); }

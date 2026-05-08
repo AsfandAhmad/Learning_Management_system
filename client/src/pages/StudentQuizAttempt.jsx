@@ -25,7 +25,9 @@ export default function StudentQuizAttempt() {
 
   // Fetch quiz and questions
   useEffect(() => {
-    fetchQuizData();
+    if (courseId && quizId) {
+      fetchQuizData();
+    }
   }, [courseId, quizId]);
 
   // Timer effect
@@ -47,6 +49,11 @@ export default function StudentQuizAttempt() {
 
   const fetchQuizData = async () => {
     try {
+      if (!user || !localStorage.getItem('token')) {
+        setError('Please log in to access this quiz.');
+        setLoading(false);
+        return;
+      }
       setLoading(true);
       const [quizRes, questionsRes] = await Promise.all([
         quizzesAPI.getQuizById(quizId),

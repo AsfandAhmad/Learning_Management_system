@@ -12,6 +12,9 @@ export async function getQuestions(req, res, next) {
         );
 
         if (!quiz.length || quiz[0].CourseID !== parseInt(courseId)) {
+            console.warn(
+                `Question lookup failed: courseId=${courseId}, quizId=${quizId}, quizCourse=${quiz[0]?.CourseID || 'missing'}`
+            );
             return res.status(404).json({ message: "Quiz not found in this course" });
         }
 

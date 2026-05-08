@@ -31,13 +31,17 @@ export default function QuestionManager({ courseId, quizId, isOpen }) {
 
   const fetchQuestions = async () => {
     try {
+      if (!localStorage.getItem('token')) {
+        setError('Please log in to manage quiz questions.');
+        return;
+      }
       setLoading(true);
       const response = await questionsAPI.getQuizQuestions(courseId, quizId);
       const data = Array.isArray(response.data) ? response.data : (response.data.questions || response.data || []);
       setQuestions(data);
     } catch (err) {
       console.error('Error fetching questions:', err);
-      setError('Failed to fetch questions');
+      setError(err.response?.data?.message || 'Failed to fetch questions');
     } finally {
       setLoading(false);
     }
