@@ -19,7 +19,8 @@ export async function getQuestions(req, res, next) {
             `SELECT q.QuestionID, q.QuestionText, q.OptionA, q.OptionB, q.OptionC, q.OptionD,
                     q.Marks
              FROM Question q
-             WHERE q.QuizID = ?
+             JOIN QuizQuestions qq ON qq.QuestionID = q.QuestionID
+             WHERE qq.QuizID = ?
              ORDER BY q.QuestionID ASC`,
             [quizId]
         );
@@ -85,9 +86,14 @@ export async function createQuestion(req, res, next) {
         }
 
         const [result] = await pool.query(
-            `INSERT INTO Question (QuestionText, OptionA, OptionB, OptionC, OptionD, CorrectOption, Marks, QuizID)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-            [QuestionText, OptionA, OptionB, OptionC, OptionD, CorrectOption, Marks || 1, quizId]
+            `INSERT INTO Question (QuestionText, OptionA, OptionB, OptionC, OptionD, CorrectOption, Marks)
+             VALUES (?, ?, ?, ?, ?, ?, ?)`,
+            [QuestionText, OptionA, OptionB, OptionC, OptionD, CorrectOption, Marks || 1]
+        );
+
+        await pool.query(
+            "INSERT INTO QuizQuestions (QuizID, QuestionID) VALUES (?, ?)",
+            [quizId, result.insertId]
         );
 
         res.status(201).json({
@@ -106,9 +112,10 @@ export async function updateQuestion(req, res, next) {
 
         // Verify question and course
         const [question] = await pool.query(
-            `SELECT q.QuizID FROM Question q 
-             JOIN Quiz qz ON q.QuizID = qz.QuizID 
-             WHERE q.QuestionID = ? AND qz.CourseID = ?`,
+            `SELECT qq.QuestionID
+             FROM QuizQuestions qq
+             JOIN Quiz qz ON qq.QuizID = qz.QuizID
+             WHERE qq.QuestionID = ? AND qz.CourseID = ?`,
             [questionId, courseId]
         );
 
@@ -156,9 +163,10 @@ export async function deleteQuestion(req, res, next) {
 
         // Verify question and course
         const [question] = await pool.query(
-            `SELECT q.QuestionID FROM Question q 
-             JOIN Quiz qz ON q.QuizID = qz.QuizID 
-             WHERE q.QuestionID = ? AND qz.CourseID = ?`,
+            `SELECT qq.QuestionID
+             FROM QuizQuestions qq
+             JOIN Quiz qz ON qq.QuizID = qz.QuizID
+             WHERE qq.QuestionID = ? AND qz.CourseID = ?`,
             [questionId, courseId]
         );
 
@@ -202,7 +210,8 @@ export async function getQuestionsWithAnswerKey(req, res, next) {
             `SELECT q.QuestionID, q.QuestionText, q.OptionA, q.OptionB, q.OptionC, q.OptionD,
                     q.CorrectOption, q.Marks
              FROM Question q
-             WHERE q.QuizID = ?
+             JOIN QuizQuestions qq ON qq.QuestionID = q.QuestionID
+             WHERE qq.QuizID = ?
              ORDER BY q.QuestionID ASC`,
             [quizId]
         );
@@ -256,9 +265,14 @@ export async function bulkCreateQuestions(req, res, next) {
             }
 
             const [result] = await pool.query(
-                `INSERT INTO Question (QuestionText, OptionA, OptionB, OptionC, OptionD, CorrectOption, Marks, QuizID)
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-                [QuestionText, OptionA, OptionB, OptionC, OptionD, CorrectOption, Marks || 1, quizId]
+                `INSERT INTO Question (QuestionText, OptionA, OptionB, OptionC, OptionD, CorrectOption, Marks)
+                 VALUES (?, ?, ?, ?, ?, ?, ?)`,
+                [QuestionText, OptionA, OptionB, OptionC, OptionD, CorrectOption, Marks || 1]
+            );
+
+            await pool.query(
+                "INSERT INTO QuizQuestions (QuizID, QuestionID) VALUES (?, ?)",
+                [quizId, result.insertId]
             );
 
             createdQuestions.push({ QuestionID: result.insertId });
@@ -279,12 +293,13 @@ export async function getQuestionStats(req, res, next) {
         const [stats] = await pool.query(
             `SELECT 
                 COUNT(*) as TotalQuestions,
-                AVG(Marks) as AverageMarks,
-                SUM(Marks) as TotalMarks,
-                MIN(Marks) as MinMarks,
-                MAX(Marks) as MaxMarks
-             FROM Question
-             WHERE QuizID = ?`,
+                AVG(q.Marks) as AverageMarks,
+                SUM(q.Marks) as TotalMarks,
+                MIN(q.Marks) as MinMarks,
+                MAX(q.Marks) as MaxMarks
+             FROM Question q
+             JOIN QuizQuestions qq ON qq.QuestionID = q.QuestionID
+             WHERE qq.QuizID = ?`,
             [quizId]
         );
 

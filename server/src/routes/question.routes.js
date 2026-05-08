@@ -11,7 +11,7 @@ import {
 } from "../controllers/question.controller.js";
 import { isAuth } from "../middleware/auth.js";
 
-const router = express.Router();
+const router = express.Router({ mergeParams: true });
 
 // GET questions for a quiz (student can view without answers)
 router.get("/quizzes/:quizId/questions", isAuth, getQuestions);

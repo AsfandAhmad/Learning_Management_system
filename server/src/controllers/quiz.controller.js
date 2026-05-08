@@ -151,8 +151,8 @@ export async function deleteQuiz(req, res, next) {
             return res.status(403).json({ message: "Unauthorized" });
         }
 
-        // Delete associated questions and attempts
-        await pool.query("DELETE FROM Question WHERE QuizID = ?", [quizId]);
+        // Delete associated question links and attempts
+        await pool.query("DELETE FROM QuizQuestions WHERE QuizID = ?", [quizId]);
         await pool.query("DELETE FROM QuizAttempt WHERE QuizID = ?", [quizId]);
         await pool.query("DELETE FROM Quiz WHERE QuizID = ?", [quizId]);
 

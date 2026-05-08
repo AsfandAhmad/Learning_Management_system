@@ -283,7 +283,9 @@ export const deleteFile = (filePath) => {
 
 // Get file URL
 export const getFileUrl = (req, filename) => {
-  return `${req.protocol}://${req.get('host')}/uploads/${filename}`;
+  const forwardedProto = req.headers['x-forwarded-proto'];
+  const protocol = (forwardedProto ? forwardedProto.split(',')[0] : req.protocol) || 'http';
+  return `${protocol}://${req.get('host')}/uploads/${filename}`;
 };
 
 export default {
